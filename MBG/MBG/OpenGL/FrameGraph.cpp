@@ -1,5 +1,6 @@
 #include "FrameGraph.hpp"
 
+#include <cassert>
 #include <glad/glad.h>
 
 #include <GLFW/glfw3.h>
@@ -109,14 +110,7 @@ void FrameGraph::bindRenderStates(const RenderStates& s, uvec2 default_frame_siz
 			);
 	}
 	else {
-		int width, height;
-		glfwGetFramebufferSize(window_->getWindow(), &width, &height);
-		command_buffer_.viewport(
-			0,
-			0,
-			width,
-			height
-		);
+		command_buffer_.defaultViewport(window_->getWindow());
 	}
 
 	// Scissor
@@ -132,6 +126,23 @@ void FrameGraph::bindRenderStates(const RenderStates& s, uvec2 default_frame_siz
 			s.scissor_size.y
 		);
 	}
+}
+
+void FrameGraph::addNode(const NodeVertexCopy& node) {
+	VertexBuffer* v = node.vertex_buffer;
+
+	command_buffer_.memoryCopy(
+		GL_ARRAY_BUFFER,
+		v->vertex_buffer_id_, 
+		node.start * v->vertex_byte_size_, 
+		node.size * v->vertex_byte_size_,
+		node.data
+	);
+}
+
+void FrameGraph::addNode(const NodeClear& node) {
+	command_buffer_.clearColor(node.color.r, node.color.g, node.color.b, node.color.a);
+	command_buffer_.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
 void FrameGraph::addNode(const NodeDraw& node) {
@@ -165,7 +176,7 @@ void FrameGraph::build() {
 
 void FrameGraph::run() {
 	//compiled_command_buffer_.run();
-	command_buffer_.run();
+	command_buffer_.runCommands();
 }
 
 void FrameGraph::renderRealTimeGraph()

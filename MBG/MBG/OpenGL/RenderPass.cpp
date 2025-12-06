@@ -98,6 +98,18 @@ RenderPass::RenderPass(const std::string& shader_file) {
 	glDeleteShader(tess_control_id);
 	glDeleteShader(tess_evaluation_id);
 	glDeleteShader(fragment_id);
+
+	// Finnally we build all of the naming that we will use for the textures
+	GLint maxCombinedUnits = 0;
+	glUseProgram(shader_program_);
+	glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &maxCombinedUnits);
+	for (int i = 0; i < maxCombinedUnits; ++i) {
+		std::string name = "tex" + std::to_string(i);
+		GLint loc = glGetUniformLocation(shader_program_, name.c_str());
+		if (loc != -1) {
+			glUniform1i(loc, i); // assign uniform to matching texture slot
+		}
+	}
 }
 
 RenderPass::~RenderPass() {

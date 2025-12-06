@@ -4,7 +4,7 @@
 
 namespace MBG {
 
-class InstancedVertexBuffer : public VertexBuffer {
+class InstancedVertexBuffer final : public VertexBuffer {
 public:
 	InstancedVertexBuffer(const InstancedVertexBufferParams& params)
 		: VertexBuffer({ 
@@ -63,6 +63,18 @@ public:
 
 	virtual ~InstancedVertexBuffer() override {
 		glDeleteBuffers(1, &instance_buffer_id_);
+	}
+
+	// This mapped pointer is unsynchronized and must be mapped to memory the GPU is not using
+	inline const void* mapInstancePtr(size_t byte_start, size_t byte_size) {
+		glBindBuffer(GL_ARRAY_BUFFER, instance_buffer_id_);
+		glMapBufferRange(GL_ARRAY_BUFFER, byte_start, byte_size,
+			GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+	}
+
+	inline const void unmapInstancePtr() {
+		glBindBuffer(GL_ARRAY_BUFFER, instance_buffer_id_);
+		glUnmapBuffer(GL_ARRAY_BUFFER);
 	}
 
 protected:

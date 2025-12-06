@@ -31,10 +31,24 @@ class Window;
 class RenderPass;
 class DescriptorSetBuffer;
 class IndirectDrawBuffer;
+class VertexBuffer;
+
+struct NodeVertexCopy {
+	VertexBuffer* vertex_buffer = nullptr;			// Pointer to the vertex buffer object
+	uint start = 0;									// start (stride is for each vertex)
+	uint size = 0;									// size (stride is for each vertex)
+	void* data = nullptr;							// Pointer to the data we want to copy
+	std::string name = "Copy Vertices";				// Name
+};
+
+struct NodeClear {
+	vec4 color;
+	std::string name = "Clear";
+};
 
 struct NodeDraw {
 	RenderPass* render_pass = nullptr;					// Shader pass that should be used
-	const RenderStates render_states{};						// All the current rendering states
+	const RenderStates render_states{};					// All the current rendering states
 	DescriptorSetBuffer* descriptor_set = nullptr;		// All of the uniform data that is to be used by the shader
 	uint draw_count = 1;								// Number of times this draw is executed
 	std::string name = "Draw";							// Name of node
@@ -42,7 +56,7 @@ struct NodeDraw {
 
 struct NodeMultiDraw {
 	RenderPass* render_pass = nullptr;					// Shader pass that should be used
-	const RenderStates render_states{};						// All the current rendering states
+	const RenderStates render_states{};					// All the current rendering states
 	DescriptorSetBuffer* descriptor_set = nullptr;		// All of the uniform data that is to be used by the shader
 	IndirectDrawBuffer* indirect_draw_buffer = nullptr;	// All offsets into the vertex data [In the case that multiple vaos are bound we itterate through all of them]
 	std::string name = "Multi Draw";					// Name of node
@@ -54,8 +68,8 @@ public:
 	~FrameGraph() = default;
 
 public:
-	//void addNode(const NodeMemoryWriteTexture2D& node);
-
+	void addNode(const NodeVertexCopy& node); // copy the data to the GPU
+	void addNode(const NodeClear& node); // Clears the screen
 	void addNode(const NodeDraw& node); // Draw geometry
 	void addNodeDisplay(); // Display to window
 

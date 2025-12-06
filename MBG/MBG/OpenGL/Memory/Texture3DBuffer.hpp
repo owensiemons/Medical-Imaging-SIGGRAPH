@@ -13,7 +13,7 @@ namespace MBG {
 
 class Texture3DBuffer {
 public:
-	Texture3DBuffer(const Texture3DBufferParams& params) : size_(params.size) {
+	Texture3DBuffer(const Texture3DBufferParams& params) : size_(params.size), format_(params.format) {
 		// Generate and bind texture
 		glGenTextures(1, &texture_id_);
 		glBindTexture(GL_TEXTURE_3D, texture_id_);
@@ -39,11 +39,28 @@ public:
 		glDeleteTextures(1, &texture_id_);
 	}
 
+	inline void subImage(const uvec3& start, const uvec3& size, const void* data, uint mip_level = 0) const {
+		glBindTexture(GL_TEXTURE_3D, texture_id_);
+
+		auto info = texture_formats[uint(format_)];
+
+		glTexSubImage3D(
+			GL_TEXTURE_3D,
+			mip_level,
+			start.x, start.y, start.z,
+			size.x, size.y, size.z,
+			info.format,
+			info.type,
+			data
+		);
+	}
+
 	uvec3 getSize() const { return size_; }
 
 protected:
 	GLuint texture_id_ = 0;
 	uvec3 size_;
+	TEXTURE_TYPE format_;
 
 	friend class FrameGraph;
 	friend class DescriptorSetBuffer;

@@ -15,7 +15,7 @@ namespace MBG {
 
 class TextureCubeMapBuffer {
 public:
-    TextureCubeMapBuffer(const TextureCubeMapBufferParams& params) : size_(params.size) {
+    TextureCubeMapBuffer(const TextureCubeMapBufferParams& params) : size_(params.size), format_(params.format) {
         glGenTextures(1, &texture_id_);
         glBindTexture(GL_TEXTURE_CUBE_MAP, texture_id_);
         assert(texture_id_ != 0);
@@ -52,13 +52,29 @@ public:
     ~TextureCubeMapBuffer() {
         glDeleteTextures(1, &texture_id_);
     }
+    
+    inline void subImage(CUBE_FACE face, const uvec2& start, const uvec2& size, const void* data, uint mip_level = 0) const {
+        glBindTexture(GL_TEXTURE_CUBE_MAP, texture_id_);
+
+        auto info = texture_formats[uint(format_)];
+
+        glTexSubImage2D(
+            GLenum(face),
+            mip_level,
+            start.x, start.y,
+            size.x, size.y,
+            info.format,
+            info.type,
+            data
+        );
+    }
 
     unsigned int getSize() const { return size_; }
-    GLuint getTextureID() const { return texture_id_; }
 
 protected:
     GLuint texture_id_ = 0;
     unsigned int size_;
+    TEXTURE_TYPE format_;
 
     friend class FrameGraph;
     friend class DescriptorSetBuffer;

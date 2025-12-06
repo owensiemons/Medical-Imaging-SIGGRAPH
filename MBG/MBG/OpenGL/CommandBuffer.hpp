@@ -15,6 +15,7 @@ private:
         ACTIVE_TEXTURE,
         BIND_TEXTURE,
         BIND_BUFFER_BASE,
+        BIND_BUFFER_RANGE,
         BIND_FRAMEBUFFER,
         BIND_TRANSFORM_FEEDBACK,
         BIND_VERTEX_ARRAY,
@@ -35,6 +36,12 @@ private:
         VIEWPORT,
         SCISSOR,
         USE_PROGRAM,
+        CLEAR_COLOR,
+        CLEAR,
+        
+        // Non-native opengl commands
+        DEFAULT_VIEWPORT,
+        MEMORY_COPY,
         DISPLAY
     };
 
@@ -42,6 +49,7 @@ private:
     struct ActiveTexture { GLenum slot; };
     struct BindTexture { GLenum type; GLuint id; };
     struct BindBufferBase { GLenum type; GLuint slot; GLuint id; };
+    struct BindBufferRange { GLenum target; GLuint index; GLuint buffer; GLintptr offset; GLsizeiptr size; };
     struct BindFramebuffer { GLenum type; GLuint id; };
     struct BindTransformFB { GLenum type; GLuint id; };
     struct BindVertexArray { GLuint id; };
@@ -69,6 +77,13 @@ private:
     struct ScissorParam { GLint x, y; GLsizei w, h; };
 
     struct UseProgramParam { GLuint program; };
+
+    struct ClearColor { GLfloat r; GLfloat g; GLfloat b; GLfloat a; };
+    struct Clear { GLbitfield bits; };
+
+    struct MemoryCopy { GLenum target; GLuint buffer; GLsizei byte_start; GLsizei byte_size; void* data; };
+
+    struct DefaultViewport { GLFWwindow* window; };
     struct DisplayParam { GLFWwindow* window; };
 
 public:
@@ -91,6 +106,10 @@ public:
 
     inline void bindBufferBase(GLenum type, GLuint slot, GLuint id) {
         addCommand(COMMAND_TYPE::BIND_BUFFER_BASE, BindBufferBase{ type, slot, id });
+    }
+
+    inline void bindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size) {
+        addCommand(COMMAND_TYPE::BIND_BUFFER_RANGE, BindBufferRange{ target, index, buffer, offset, size });
     }
 
     inline void bindFramebuffer(GLenum type, GLuint id) {
@@ -173,18 +192,34 @@ public:
         addCommand(COMMAND_TYPE::USE_PROGRAM, UseProgramParam{ program });
     }
 
+    inline void clearColor(GLfloat r, GLfloat g, GLfloat b, GLfloat a) {
+        addCommand(COMMAND_TYPE::CLEAR_COLOR, ClearColor{ r, g, b, a });
+    }    
+    
+    inline void clear(GLbitfield bits) {
+        addCommand(COMMAND_TYPE::CLEAR, Clear{ bits });
+    }
+
+    inline void memoryCopy(GLenum target, GLuint buffer, GLsizei byte_start, GLsizei byte_size, void* data) {
+        addCommand(COMMAND_TYPE::MEMORY_COPY, MemoryCopy{ target, buffer, byte_start, byte_size, data });
+    }
+
+    inline void defaultViewport(GLFWwindow* window) {
+        addCommand(COMMAND_TYPE::DEFAULT_VIEWPORT, DefaultViewport{ window });
+    }
+
     inline void display(GLFWwindow* window) {
         addCommand(COMMAND_TYPE::DISPLAY, DisplayParam{ window });
     }
 
-    inline void clear() {
+    inline void clearCommands() {
         types_.clear();
         data_.clear();
         current_type_ = current_data_ = 0;
     }
 
     // Execute all commands
-    void run() {
+    void runCommands() {
         while (true) {
             // If we reached the end then we loop back around
             if (current_type_ >= types_.size()) {
@@ -212,6 +247,12 @@ public:
                 auto* p = (BindBufferBase*)ptr;
                 current_data_ += sizeof(*p);
                 glBindBufferBase(p->type, p->slot, p->id);
+                break;
+            }
+            case COMMAND_TYPE::BIND_BUFFER_RANGE: {
+                auto* p = (BindBufferRange*)ptr;
+                current_data_ += sizeof(*p);
+                glBindBufferRange(p->target, p->index, p->buffer, p->offset, p->size);
                 break;
             }
             case COMMAND_TYPE::BIND_FRAMEBUFFER: {
@@ -332,6 +373,46 @@ public:
                 auto* p = (UseProgramParam*)ptr;
                 current_data_ += sizeof(*p);
                 glUseProgram(p->program);
+                break;
+            }
+            case COMMAND_TYPE::CLEAR_COLOR: {
+                auto* p = (ClearColor*)ptr;
+                current_data_ += sizeof(*p);
+                glClearColor(p->r, p->g, p->b, p->a);
+                break;
+            }
+            case COMMAND_TYPE::CLEAR: {
+                auto* p = (Clear*)ptr;
+                current_data_ += sizeof(*p);
+                glClear(p->bits);
+                break;
+            }
+            case COMMAND_TYPE::MEMORY_COPY: {
+                auto* p = (MemoryCopy*)ptr;
+                current_data_ += sizeof(*p);
+                
+                glBindBuffer(p->target, p->buffer);
+                void* ptr = glMapBufferRange(
+                    p->target,
+                    p->byte_start,
+                    p->byte_size,
+                    GL_MAP_WRITE_BIT
+                );
+
+                assert(ptr != nullptr && "Failed to map vertex buffer!");
+
+                std::memcpy(ptr, p->data, p->byte_size);
+
+                glUnmapBuffer(p->target);
+                break;
+            }
+            case COMMAND_TYPE::DEFAULT_VIEWPORT: {
+                auto* p = (DefaultViewport*)ptr;
+                current_data_ += sizeof(*p);
+
+                int width, height;
+                glfwGetFramebufferSize(p->window, &width, &height);
+                glViewport(0, 0, width, height);
                 break;
             }
             case COMMAND_TYPE::DISPLAY: {

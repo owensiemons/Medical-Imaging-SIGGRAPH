@@ -14,7 +14,7 @@ namespace MBG {
 class Texture2DArrayBuffer {
 public:
     Texture2DArrayBuffer(const Texture2DArrayBufferParams& params) 
-        : size_(params.size), layers_(params.layers) 
+        : size_(params.size), layers_(params.layers), format_(params.format)
     {
         glGenTextures(1, &texture_id_);
         glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id_);
@@ -50,6 +50,22 @@ public:
         glDeleteTextures(1, &texture_id_);
     }
 
+    inline void subImage(uint layer, const uvec2& start, const uvec2& size, const void* data, uint mip_level = 0) const {
+        glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id_);
+
+        auto info = texture_formats[uint(format_)];
+
+        glTexSubImage3D(
+            GL_TEXTURE_2D_ARRAY,
+            mip_level,
+            start.x, start.y, layer,
+            size.x, size.y, 1,
+            info.format,
+            info.type,
+            data
+        );
+    }
+
     uvec2 getSize() const { return size_; }
     uint getLayerSize() const { return layers_; }
 
@@ -61,6 +77,7 @@ protected:
 private:
     uvec2 size_;
     uint layers_;
+    TEXTURE_TYPE format_;
 };
 
 }

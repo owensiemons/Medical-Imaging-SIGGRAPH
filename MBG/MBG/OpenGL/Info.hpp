@@ -157,11 +157,54 @@ enum class DESCRIPTOR_TYPE {
 	UNIFORM_BUFFER,
 };
 
+struct VertexView {
+	uint start;
+	uint size;
+};
+
+struct ElementView {
+	uint start;
+	uint size;
+};
+
+struct InstancedVertexView {
+	uint start;
+	uint size;
+};
+
+struct InstancedElementView {
+	uint start;
+	uint size;
+};
+
+struct TextureCubeMapView {
+	uint face; // In openGL's assending directions
+	uint mip_level;
+};
+
+struct Texture2DArrayView {
+	uint slice;
+	uint mip_level;
+};
+
+struct Texture2DView {
+	uint mip_level;
+};
+
+struct Texture3DView {
+	uint slice;
+	uint mip_level;
+};
+
+struct UniformView {
+	uint start;
+	uint size;
+};
+
 struct Descriptor {
 	DESCRIPTOR_TYPE type = DESCRIPTOR_TYPE::UNIFORM_BUFFER;		// Type of the descriptor
-	void* data = nullptr;						// Refrence to the object
-	uint view_start = 0;						// Sets offset of the view of the buffer -- add error that says textures don't support a view and framebuffer
-	uint view_size = 0;							// Sets size of the view of the buffer
+	void* data = nullptr;										// Refrence to the object
+	void* view = nullptr;										// Set the view the GPU sees/uese [nullptr is default]
 };
 
 struct DescriptorSetBufferParams {
@@ -403,14 +446,25 @@ inline void setUnpackAlignment(const TEXTURE_TYPE format, const uint width) {
 //------------------------------------------------------------
 
 struct TextureBufferParams {
-	uint size = 0;				 // Number of elements
+	uint size = 0;								// Number of elements
 	TEXTURE_TYPE format = TEXTURE_TYPE::R32F;  // default format
-	void* data = nullptr;		 // Initial data
+	void* data = nullptr;						// Initial data
 };
 
 //------------------------------------------------------------
 // TEXTURE CUBE MAP
 //------------------------------------------------------------
+
+enum class CUBE_FACE {
+	POSITIVE_X = GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+	NEGATIVE_X = GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+
+	POSITIVE_Y = GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+	NEGATIVE_Y = GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+
+	POSITIVE_Z = GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+	NEGATIVE_Z = GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
+};
 
 struct TextureCubeMapBufferParams {
 	// Size of each face (cube is always square)
@@ -648,24 +702,20 @@ struct UniformBufferParams {
 // INDIRECT DRAW BUFFER
 //------------------------------------------------------------
 
-struct IndirectDraw {
-	uint vertex_start;
-	uint vertex_count;
-};
-
 struct IndirectDrawBufferParams {
-	IndirectDraw* indirect_draw;
-	uint count;
+	int* start;		// An array of first vertex/element
+	int* size;		// An array of sizes of vertex/element
+	uint count;		// Number of elements in the arrays
 };
-
-// TODO: when objects are deleted they should also be added to the frame graph queue somehow??
-
-// TODO: we need a way to asyncroously upload data to the GPU 
 
 // TODO: we need to add lamdba expressions for both read and write operations
 
-// TODO: we need clear screen node
+// TODO: we need a multi draaw node
 
-// TODO: When there is a screen resize with default window we need to update the viewport correctlt
+// TODO: add a way to render with IMGUI
+
+// TODO: add f11 for full screen mode!
+
+// TODO: add reading to textures
 
 }

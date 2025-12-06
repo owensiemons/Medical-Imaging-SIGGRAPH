@@ -37,6 +37,18 @@ public:
         glDeleteBuffers(1, &buffer_id_);
     }
 
+    // This mapped pointer is unsynchronized and must be mapped to memory the GPU is not using
+    inline const void* mapInstancePtr(size_t byte_start, size_t byte_size) {
+        glBindBuffer(GL_TEXTURE_BUFFER, texture_id_);
+        glMapBufferRange(GL_TEXTURE_BUFFER, byte_start, byte_size,
+            GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+    }
+
+    inline const void unmapInstancePtr() {
+        glBindBuffer(GL_TEXTURE_BUFFER, texture_id_);
+        glUnmapBuffer(GL_TEXTURE_BUFFER);
+    }
+
     uint getSize() const { return size_; }
 
 protected:

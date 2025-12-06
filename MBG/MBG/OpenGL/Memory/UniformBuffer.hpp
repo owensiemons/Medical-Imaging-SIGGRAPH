@@ -22,6 +22,18 @@ public:
 		glBufferData(GL_UNIFORM_BUFFER, params.size, params.data, GLenum(params.buffer_usage));
 	}
 
+	// This mapped pointer is unsynchronized and must be mapped to memory the GPU is not using
+	inline const void* mapPtr(size_t byte_start, size_t byte_size) {
+		glBindBuffer(GL_UNIFORM_BUFFER, uniform_id_);
+		glMapBufferRange(GL_UNIFORM_BUFFER, byte_start, byte_size,
+			GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+	}
+
+	inline const void unmapPtr() {
+		glBindBuffer(GL_UNIFORM_BUFFER, uniform_id_);
+		glUnmapBuffer(GL_UNIFORM_BUFFER);
+	}
+
 	size_t getSize() const { return size_; }
 
 protected:
@@ -30,6 +42,7 @@ protected:
 
 	friend class FrameGraph;
 	friend class DescriptorSetBuffer;
+private:
 };
 
 }
