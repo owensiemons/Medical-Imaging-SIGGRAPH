@@ -27,7 +27,7 @@ add_executable (MBG
     "MBG/OpenGL/RenderPass.cpp"
     "MBG/OpenGL/Window.hpp"
     "MBG/OpenGL/Window.cpp"
-     "src/Shaders/main.cpp")
+    )
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET MBG PROPERTY CXX_STANDARD 20)
