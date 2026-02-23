@@ -5,8 +5,7 @@
 find_package(Catch2 CONFIG REQUIRED)
 
 # Add source to this project's executable.
-add_executable (MBG 
-    "Tests/tests.cpp"
+add_executable (MBG
     "MBG/OpenGL/Memory/DescriptorSetBuffer.hpp"
     "MBG/OpenGL/Memory/ElementBuffer.hpp"
     "MBG/OpenGL/Memory/IndirectDrawBuffer.hpp"
@@ -60,11 +59,6 @@ target_link_libraries(MBG PRIVATE Catch2::Catch2WithMain)
 include(CTest)
 include(Catch)
 catch_discover_tests(MBG)
-
-add_custom_target(copy_assets ALL
-    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_LIST_DIR}/copy_assets.cmake
-)
-add_dependencies(MBG copy_assets)
 
 add_custom_target(copy_shaders ALL
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_LIST_DIR}/copy_shaders.cmake
