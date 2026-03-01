@@ -10,6 +10,8 @@ using namespace MBG;
 #include <array>
 #include <vector>
 
+//messing around with a bounding box and some more discrete data
+
 int main() {
 	// ----------------- Window -----------------------------
 	Window window(800, 600, "raymarch");
