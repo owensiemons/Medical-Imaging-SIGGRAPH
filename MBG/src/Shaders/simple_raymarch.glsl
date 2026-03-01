@@ -17,6 +17,8 @@ layout(std140, binding = 0) uniform uniforms {
     float screen_height;
 };
 
+uniform sampler3D tex0;
+
 out vec4 frag_color;
 
 float sdfSphere(vec3 p, vec3 center, float rad) {
@@ -57,7 +59,9 @@ void main() {
     if (t > 0.0) {
         color = vec3(1.0, 1.0, 1.0);
     } else {
-        color = vec3(0.2, 0.2, 0.2);
+        float depthval = 470.0 / 720.0;
+        vec2 uvc = vec2(uv * 0.5 + 0.5);
+        color = texture(tex0, vec3(uvc, depthval)).rrr;//vec3(0.2, 0.2, 0.2);
     }
     frag_color = vec4(color, 1.0);
 }

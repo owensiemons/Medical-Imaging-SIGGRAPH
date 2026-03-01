@@ -9,7 +9,8 @@ using namespace MBG;
 #include <cstring>
 #include <array>
 #include <vector>
-
+#include "texgen.hpp"
+#include <filesystem>
 //messing around with a bounding box and some more discrete data
 
 int main() {
@@ -64,11 +65,31 @@ int main() {
 	RenderPass render_pass_main("Shaders/simple_raymarch.glsl");
 
 
-
+	// ----------------- Texture Stuff -----------------------------
+	
+	uint32_t width, height;
+	int depth;
+	std::vector<unsigned char> volume_vector = Load3DTexture("C:/Users/rowan/Documents/Graphics/data/8bit", width, height, depth);//Replace with your own
+	unsigned char* volume_data = volume_vector.data();
+	std::cout << "Width: " << width << " Height: " << height << " Depth: " << depth << std::endl;
+	std::cout << "Data size: " << volume_vector.size() << std::endl;
+	std::cout << "Data ptr: " << (void*)volume_vector.data() << std::endl;
+	Texture3DBuffer volume_texture({
+		.size = uvec3(width, height, depth),
+		.format = TEXTURE_TYPE::R8,
+		.min_filter = TEXTURE_FILTER::NEAREST,
+		.mag_filter = TEXTURE_FILTER::NEAREST,
+		.wrap_s = TEXTURE_WRAP::CLAMP_TO_EDGE,
+		.wrap_t = TEXTURE_WRAP::CLAMP_TO_EDGE,
+		.wrap_r = TEXTURE_WRAP::CLAMP_TO_EDGE,
+		.data = volume_data,
+	});
+	
 	// ----------------- Descriptor Set -----------------------------
 	Descriptor descriptors[] = {
 		{DESCRIPTOR_TYPE::VERTEX_BUFFER_IN, (void*)&vertex_buffer, nullptr},
 		{DESCRIPTOR_TYPE::UNIFORM_BUFFER, (void*)&ubo, nullptr},
+		{DESCRIPTOR_TYPE::TEXTURE_3D_BUFFER_IN, (void*)&volume_texture, nullptr}
 	};
 
 	DescriptorSetBuffer descriptor_set({
@@ -97,7 +118,7 @@ int main() {
 	graph.build();
 
 	while (!window.isClosed()) {
-		//TODO: update screen resolution
+		//TODO: update screen resolution (may need to make a new uniformbuffer.hpp function, its a pain).
 		graph.run();
 	}
 }

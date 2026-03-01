@@ -26,7 +26,7 @@ add_executable (MBG
     "MBG/OpenGL/RenderPass.cpp"
     "MBG/OpenGL/Window.hpp"
     "MBG/OpenGL/Window.cpp"
-    "src/main.cpp")
+    "src/main.cpp" "src/texgen.cpp")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET MBG PROPERTY CXX_STANDARD 20)
@@ -51,6 +51,9 @@ target_link_libraries(MBG PRIVATE glad::glad)
 
 find_package(stb REQUIRED)
 target_include_directories(MBG PRIVATE ${Stb_INCLUDE_DIR})
+
+find_package(TIFF REQUIRED)
+target_link_libraries(MBG PRIVATE TIFF::TIFF)
 
 # Link Catch2
 target_link_libraries(MBG PRIVATE Catch2::Catch2WithMain)
