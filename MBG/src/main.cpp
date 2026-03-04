@@ -43,13 +43,24 @@ int main() {
 	};
 
 	std::vector<Vertex> vertex_data = {
-		{vec3(-1.0, -1.0, 0.0)},
-		{vec3(1.0, -1.0, 0.0)},
-		{vec3(1.0, 1.0, 0.0)},
-
-		{vec3(-1.0, 1.0, 0.0)},
-		{vec3(-1.0, -1.0, 0.0)},
-		{vec3(1.0, 1.0, 0.0)}
+		// front
+		{vec3(-0.5, -0.5,  0.5)}, {vec3(0.5, -0.5,  0.5)}, {vec3(0.5,  0.5,  0.5)},
+		{vec3(-0.5, -0.5,  0.5)}, {vec3(0.5,  0.5,  0.5)}, {vec3(-0.5,  0.5,  0.5)},
+		// back
+		{vec3(0.5, -0.5, -0.5)}, {vec3(-0.5, -0.5, -0.5)}, {vec3(-0.5,  0.5, -0.5)},
+		{vec3(0.5, -0.5, -0.5)}, {vec3(-0.5,  0.5, -0.5)}, {vec3(0.5,  0.5, -0.5)},
+		// left
+		{vec3(-0.5, -0.5, -0.5)}, {vec3(-0.5, -0.5,  0.5)}, {vec3(-0.5,  0.5,  0.5)},
+		{vec3(-0.5, -0.5, -0.5)}, {vec3(-0.5,  0.5,  0.5)}, {vec3(-0.5,  0.5, -0.5)},
+		// right
+		{vec3(0.5, -0.5,  0.5)}, {vec3(0.5, -0.5, -0.5)}, {vec3(0.5,  0.5, -0.5)},
+		{vec3(0.5, -0.5,  0.5)}, {vec3(0.5,  0.5, -0.5)}, {vec3(0.5,  0.5,  0.5)},
+		// top
+		{vec3(-0.5,  0.5,  0.5)}, {vec3(0.5,  0.5,  0.5)}, {vec3(0.5,  0.5, -0.5)},
+		{vec3(-0.5,  0.5,  0.5)}, {vec3(0.5,  0.5, -0.5)}, {vec3(-0.5,  0.5, -0.5)},
+		// bottom
+		{vec3(-0.5, -0.5, -0.5)}, {vec3(0.5, -0.5, -0.5)}, {vec3(0.5, -0.5,  0.5)},
+		{vec3(-0.5, -0.5, -0.5)}, {vec3(0.5, -0.5,  0.5)}, {vec3(-0.5, -0.5,  0.5)},
 	};
 
 	VertexBuffer vertex_buffer({
@@ -71,14 +82,12 @@ int main() {
 	int depth;
 	std::vector<unsigned char> volume_vector = Load3DTexture("C:/Users/rowan/Documents/Graphics/data/8bit", width, height, depth);//Replace with your own
 	unsigned char* volume_data = volume_vector.data();
-	std::cout << "Width: " << width << " Height: " << height << " Depth: " << depth << std::endl;
-	std::cout << "Data size: " << volume_vector.size() << std::endl;
-	std::cout << "Data ptr: " << (void*)volume_vector.data() << std::endl;
+
 	Texture3DBuffer volume_texture({
 		.size = uvec3(width, height, depth),
 		.format = TEXTURE_TYPE::R8,
-		.min_filter = TEXTURE_FILTER::NEAREST,
-		.mag_filter = TEXTURE_FILTER::NEAREST,
+		.min_filter = TEXTURE_FILTER::LINEAR,
+		.mag_filter = TEXTURE_FILTER::LINEAR,
 		.wrap_s = TEXTURE_WRAP::CLAMP_TO_EDGE,
 		.wrap_t = TEXTURE_WRAP::CLAMP_TO_EDGE,
 		.wrap_r = TEXTURE_WRAP::CLAMP_TO_EDGE,
@@ -103,7 +112,7 @@ int main() {
 	FrameGraph graph(window);
 
 	graph.addNode({
-		.color = vec4(0.05, 0.06, 0.05, 1.0),
+		.color = vec4(0.0, 0.0, 0.0, 1.0),
 		});
 
 	// Render the geometry
