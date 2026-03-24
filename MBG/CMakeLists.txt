@@ -26,7 +26,13 @@ add_executable (MBG
     "MBG/OpenGL/RenderPass.cpp"
     "MBG/OpenGL/Window.hpp"
     "MBG/OpenGL/Window.cpp"
-    "src/main.cpp" "src/texgen.cpp")
+
+    "src/main.cpp"
+    "src/texgen.hpp"
+    "src/texgen.cpp"
+    "src/camera.hpp"
+    "src/camera.cpp"
+)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET MBG PROPERTY CXX_STANDARD 20)

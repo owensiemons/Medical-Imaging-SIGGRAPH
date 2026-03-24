@@ -15,6 +15,14 @@ void main() {
 layout(std140, binding = 0) uniform uniforms {
     float screen_width;
     float screen_height;
+    float pad0, pad1;
+
+    mat4 proj;
+    mat4 view;
+    mat4 model;
+
+    mat4 inv_proj;
+    mat4 inv_view;
 };
 
 uniform sampler3D tex0;
@@ -47,25 +55,35 @@ bool intersectBox(Ray r, AABB aabb, out float t0, out float t1) {
 void main() {
     vec2 resolution = vec2(screen_width, screen_height);
     vec2 uv = (gl_FragCoord.xy / resolution) * 2.0 - 1.0;
-    vec3 ro = vec3(0, 0, -2.75);
-    float aspect = screen_width / screen_height;
+    vec3 ro = vec3(inv_view[3]);
 
-    float stepSize = 0.01;
+    vec4 ray_clip = vec4(uv, -1.0, 1.0);
+    vec4 ray_view = inv_proj * ray_clip;
+    ray_view = vec4(ray_view.xy, -1.0, 0.0);
 
-    vec3 rd = normalize(vec3(uv.x * aspect, uv.y, 1.0));
-    Ray mainRay = Ray(ro, rd);
+    vec3 rd = normalize(vec3(inv_view * ray_view));
+
+    Ray main_ray = Ray(ro, rd);
+
     AABB aabb = AABB(vec3(-1.0), vec3(+1.0));
 
     float tnear, tfar;
 
-    intersectBox(mainRay, aabb, tnear, tfar);
+    if (!intersectBox(main_ray, aabb, tnear, tfar)) {
+        frag_color = vec4(0.0);
+        return;
+    }
     if (tnear < 0.0) { tnear = 0.0; }
 
-    vec3 rayStart = mainRay.ro + mainRay.rd * tnear;
-    vec3 rayStop = mainRay.ro + mainRay.rd * tfar;
+    float stepSize = 0.01;
+    vec3 rayStart = main_ray.ro + main_ray.rd * tnear;
+    vec3 rayStop = main_ray.ro + main_ray.rd * tfar;
 
     rayStart = 0.5 * (rayStart + 1.0);
     rayStop = 0.5 * (rayStop + 1.0);
+
+    rayStart.y = 1.0 - rayStart.y;
+    rayStop.y  = 1.0 - rayStop.y;
 
     vec3 ray = rayStop - rayStart;
     float rayLen = length(ray);
