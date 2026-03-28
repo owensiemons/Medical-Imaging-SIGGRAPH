@@ -23,6 +23,8 @@ layout(std140, binding = 0) uniform uniforms {
 
     mat4 inv_proj;
     mat4 inv_view;
+
+    uint frame_cnt;
 };
 
 uniform sampler3D tex0;
@@ -70,7 +72,7 @@ void main() {
     float tnear, tfar;
 
     if (!intersectBox(main_ray, aabb, tnear, tfar)) {
-        frag_color = vec4(0.0);
+        frag_color = vec4(vec3(0.09), 0.0);
         return;
     }
     if (tnear < 0.0) { tnear = 0.0; }
@@ -82,9 +84,6 @@ void main() {
     rayStart = 0.5 * (rayStart + 1.0);
     rayStop = 0.5 * (rayStop + 1.0);
 
-    rayStart.y = 1.0 - rayStart.y;
-    rayStop.y  = 1.0 - rayStop.y;
-
     vec3 ray = rayStop - rayStart;
     float rayLen = length(ray);
     vec3 stepVec = stepSize * ray / rayLen;
@@ -92,7 +91,7 @@ void main() {
 
     vec3 pos = rayStart;
 
-    vec4 dst = vec4(0, 0, 0, 0);
+    vec4 dst = vec4(0.09, 0.09, 0.09, 0);
     vec4 src = vec4(0, 0, 0, 0);
 
     float value = 0;

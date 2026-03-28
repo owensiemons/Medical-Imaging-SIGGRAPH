@@ -13,6 +13,7 @@ public:
 
     void rotate(glm::vec2 rot);
     void updateAspectRatio(float aspectRatio);
+    float getFOV();
     void updateFOV(float fov);
     void orbit(glm::vec2 mouseAngles, glm::vec3 target, float rad);
     glm::vec3 getDirection();

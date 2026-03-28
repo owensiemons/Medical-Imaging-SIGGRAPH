@@ -44,6 +44,9 @@ void Camera::updateAspectRatio(float aspectRatio) {
 	perspective = glm::perspective(glm::radians(zoom), aspectRatio, near_plane, far_plane);
 }
 
+float Camera::getFOV() {
+	return zoom;
+}
 void Camera::updateFOV(float fov) {
 	zoom = fov;
 	perspective = glm::perspective(glm::radians(zoom), aspectRatio_, near_plane, far_plane);

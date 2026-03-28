@@ -44,7 +44,8 @@ std::vector<unsigned char> Load3DTexture(const std::string& folder, uint32_t& wi
 
         // Read scanlines
         for (uint32_t row = 0; row < height; row++) {
-            TIFFReadScanline(slice_tif, &volumeData[z * width * height + row * width], row);
+            uint32_t flipped_row = height - 1 - row;
+            TIFFReadScanline(slice_tif, &volumeData[z * width * height + flipped_row * width], row);
         }
 
         TIFFClose(slice_tif);

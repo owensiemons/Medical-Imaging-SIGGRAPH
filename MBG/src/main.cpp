@@ -14,15 +14,21 @@ using namespace MBG;
 #include "texgen.hpp"
 #include <filesystem>
 
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void scroll_callback(GLFWwindow* window, double xpos, double ypos);
+
 int initWidth = 1600;
 int initHeight = 1200;
+
 bool firstMouse = true;
 float lastX = static_cast<float>(initWidth) / 2.0;
 float lastY = static_cast<float>(initHeight) / 2.0;
+bool islmbHeld = false;
+
 //messing around with a bounding box and some more discrete data
 
-//TODO: implement zoom scrolling, bound it so it cant go inside the volume, fix orbit radius
+//TODO: fix orbit radius?, isosurface & MIP shaders, make PBR more PBR
 
 
 int main() {
@@ -30,7 +36,9 @@ int main() {
 	Window window(initWidth, initHeight, "raymarch");
 	GLFWwindow* glfw_wind = window.getWindow();
 
+	glfwSetMouseButtonCallback(glfw_wind, mouse_button_callback);
 	glfwSetCursorPosCallback(glfw_wind, mouse_callback);
+	glfwSetScrollCallback(glfw_wind, scroll_callback);
 
 	// ----------------- Camera -----------------------------
 	Camera camera(vec3(0.0, 0.0, -2.0), (float)window.getWidth() / (float)window.getHeight());
@@ -42,6 +50,7 @@ int main() {
 
 	mat4 model_matrix = mat4(1.0f);
 
+	uint frame_count = 0;
 
 	struct uniforms {
 		float screen_width;
@@ -54,9 +63,11 @@ int main() {
 
 		mat4 inv_proj;
 		mat4 inv_view;
+
+		uint frame_cnt;
 	};
 
-	uniforms uniform_data = { (float)window.getWidth(), (float)window.getHeight(), 0.0f, 0.0f, proj_matrix, view_matrix, model_matrix, inverse(proj_matrix), inverse(view_matrix)};
+	uniforms uniform_data = { (float)window.getWidth(), (float)window.getHeight(), 0.0f, 0.0f, proj_matrix, view_matrix, model_matrix, inverse(proj_matrix), inverse(view_matrix), frame_count};
 
 	UniformBufferParams params({
 		.data = &uniform_data,
@@ -106,8 +117,8 @@ int main() {
 
 
 	// ----------------- Render Pass -----------------------------
-	RenderPass render_pass_main("Shaders/simple_raymarch.glsl");
-
+	//RenderPass render_pass_main("Shaders/alpha_blender.glsl");
+	RenderPass render_pass_main("Shaders/PBR.glsl");
 
 	// ----------------- Texture Stuff -----------------------------
 	
@@ -162,38 +173,89 @@ int main() {
 	while (!window.isClosed()) {
 		graph.run();
 
+		int fbWidth, fbHeight;
+		glfwGetFramebufferSize(glfw_wind, &fbWidth, &fbHeight);
+
+		camera.updateAspectRatio((float)fbWidth / (float)fbHeight);
+
 		proj_matrix = camera.getCameraProjMat();
 		view_matrix = camera.getCameraViewMat();
 
-		uniforms window_data = { (float)window.getWidth(), (float)window.getHeight(), 0.0f, 0.0f, proj_matrix, view_matrix, model_matrix, inverse(proj_matrix), inverse(view_matrix) };
+		uniforms window_data = {
+			(float)fbWidth, (float)fbHeight, 0.0f, 0.0f,
+			proj_matrix, view_matrix, model_matrix,
+			inverse(proj_matrix), inverse(view_matrix),
+			frame_count
+		};
+		
 		ubo.remapData((size_t)sizeof(window_data), &window_data, 0);
+
+		frame_count++;
+	}
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+	if (button == GLFW_MOUSE_BUTTON_LEFT) {
+		if (action == GLFW_PRESS) {
+			islmbHeld = true;
+			firstMouse = true;
+		}
+		else if (action == GLFW_RELEASE) {
+			islmbHeld = false;
+		}
 	}
 }
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
-	Camera* camera = static_cast<Camera*>(glfwGetWindowUserPointer(window));
-	float xpos = static_cast<float>(xposIn);
-	float ypos = static_cast<float>(yposIn);
+	if (islmbHeld) {
+		Camera* camera = static_cast<Camera*>(glfwGetWindowUserPointer(window));
 
-	if (firstMouse) {
+		float xpos = static_cast<float>(xposIn);
+		float ypos = static_cast<float>(yposIn);
+
+		if (firstMouse) {
+			lastX = xpos;
+			lastY = ypos;
+
+			firstMouse = false;
+		}
+
+		float dx = lastX - xpos;
+		float dy = lastY - ypos;
+
 		lastX = xpos;
 		lastY = ypos;
-		firstMouse = false;
+
+		float sensitivity = 0.007f;
+		dx *= sensitivity;
+		dy *= sensitivity;
+
+		if (abs(dx) < 0.001 && abs(dy) < 0.001) {
+			return;
+		}
+
+		vec2 mouseDelta = vec2(dx, dy);
+		vec3 target = vec3(0.0, 0.0, 0.0);
+		camera->orbit(mouseDelta, target, 2.0);
+	}
+}
+
+void scroll_callback(GLFWwindow* window, double xposIn, double yposIn) {
+	Camera* camera = static_cast<Camera*>(glfwGetWindowUserPointer(window));
+	float currFOV = camera->getFOV();
+
+	float ypos = static_cast<float>(yposIn);
+
+	float sensitivity = 5.00f;
+	ypos *= sensitivity;
+
+	currFOV -= ypos;
+	if (currFOV < 0.5) {
+		currFOV = 0.5;
 	}
 
-	float xoffset = xpos - lastX;
-	float yoffset = lastY - ypos;;
-	lastX = xpos;
-	lastY = ypos;
-
-	float sensitivity = 0.01f;
-	xoffset *= sensitivity;
-	yoffset *= sensitivity;
-	if (abs(xoffset) < 0.001 && abs(yoffset) < 0.001) {
-		return;
+	if (currFOV > 179.5) {
+		currFOV = 179.5;
 	}
-
-	vec2 mouseDelta = vec2(xoffset, yoffset);
-	vec3 target = vec3(0.0, 0.0, 0.0);
-	camera->orbit(mouseDelta, target, 2.0);
+	camera->updateFOV(currFOV);
 }
