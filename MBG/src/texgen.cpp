@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include <filesystem>
 #include <iostream>
+#include <fstream>
 #include <algorithm>
 #include <tiffio.h>
 
@@ -56,4 +57,39 @@ std::vector<unsigned char> Load3DTexture(const std::string& folder, uint32_t& wi
     }
 
     return volumeData;
+}
+
+void Load3DTextureBinary(const std::string& folder, unsigned char*& buffer, uint32_t& width, uint32_t& height, int& depth) {
+
+   
+    std::streampos size;
+    char* memblock;
+
+    width = 512;
+    height = 512;
+    depth = 208;
+
+    std::ifstream file(folder, std::ios::in | std::ios::binary | std::ios::ate);
+    if (file.is_open()) {
+        size = file.tellg();
+        memblock = new char[size];
+        file.seekg(0, std::ios::beg);
+        file.read(memblock, size);
+        file.close();
+        std::cout << "the complete file content is in memory" << std::endl;
+
+        if (size == 0) {
+            std::cout << "empty" << std::endl;
+        }
+        else {
+            std::cout << to_string(size) << std::endl;
+        }
+
+        buffer = reinterpret_cast<unsigned char*>(memblock);
+
+        memblock = nullptr;
+
+    }
+    else std::cout << "Unable to open file";
+
 }

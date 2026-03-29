@@ -13,6 +13,7 @@ using namespace MBG;
 #include <vector>
 #include "texgen.hpp"
 #include <filesystem>
+#include <glm/ext/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -48,7 +49,7 @@ int main() {
 	mat4 proj_matrix = camera.getCameraProjMat();
 	mat4 view_matrix = camera.getCameraViewMat();
 
-	mat4 model_matrix = mat4(1.0f);
+	mat4 model_matrix = glm::rotate(mat4(1.0f), glm::radians(-157.00f), vec3(0.0, 0.0, 1.0));
 
 	uint frame_count = 0;
 
@@ -124,8 +125,9 @@ int main() {
 	
 	uint32_t width, height;
 	int depth;
-	std::vector<unsigned char> volume_vector = Load3DTexture("C:/Users/rowan/Documents/Graphics/data/8bit", width, height, depth);//Replace with your own
-	unsigned char* volume_data = volume_vector.data();
+	//std::vector<unsigned char> volume_vector = Load3DTexture("C:/Users/rowan/Documents/Graphics/data/8bit", width, height, depth);//Replace with your own
+	unsigned char* volume_data = nullptr;//volume_vector.data();
+	Load3DTextureBinary("C:/Users/NBhide/Projects/Medical_Image_Rendering/ct_scan.raw", volume_data, width, height, depth);
 
 	Texture3DBuffer volume_texture({
 		.size = uvec3(width, height, depth),
