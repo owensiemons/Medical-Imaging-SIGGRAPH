@@ -127,7 +127,7 @@ int main() {
 	int depth;
 	//std::vector<unsigned char> volume_vector = Load3DTexture("C:/Users/rowan/Documents/Graphics/data/8bit", width, height, depth);//Replace with your own
 	unsigned char* volume_data = nullptr;//volume_vector.data();
-	Load3DTextureBinary("C:/Users/NBhide/Projects/Medical_Image_Rendering/ct_scan.raw", volume_data, width, height, depth);
+	Load3DTextureBinary("C:/Users/NBhide/Source/Repos/Medical-Imaging-SIGGRAPH/MBG/src/ct_scan.raw", volume_data, width, height, depth);
 
 	Texture3DBuffer volume_texture({
 		.size = uvec3(width, height, depth),
