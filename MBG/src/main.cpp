@@ -26,10 +26,11 @@ bool firstMouse = true;
 float lastX = static_cast<float>(initWidth) / 2.0;
 float lastY = static_cast<float>(initHeight) / 2.0;
 bool islmbHeld = false;
+float orbitRadius = 2.0;
 
 //messing around with a bounding box and some more discrete data
 
-//TODO: fix orbit radius?, isosurface & MIP shaders, make PBR more PBR
+//TODO: MIP shader, make PBR more PBR, transfer functions, fix light source, add occlusion plane things
 
 
 int main() {
@@ -119,7 +120,9 @@ int main() {
 
 	// ----------------- Render Pass -----------------------------
 	//RenderPass render_pass_main("Shaders/alpha_blender.glsl");
-	RenderPass render_pass_main("Shaders/PBR.glsl");
+	RenderPass render_pass_main("Shaders/isosurface.glsl");
+	//RenderPass render_pass_main("Shaders/PBR.glsl");
+
 
 	// ----------------- Texture Stuff -----------------------------
 	
@@ -127,7 +130,7 @@ int main() {
 	int depth;
 	//std::vector<unsigned char> volume_vector = Load3DTexture("C:/Users/rowan/Documents/Graphics/data/8bit", width, height, depth);//Replace with your own
 	unsigned char* volume_data = nullptr;//volume_vector.data();
-	Load3DTextureBinary("C:/Users/NBhide/Source/Repos/Medical-Imaging-SIGGRAPH/MBG/src/ct_scan.raw", volume_data, width, height, depth);
+	Load3DTextureBinary("C:/Users/rowan/Documents/Graphics/ct_scan.raw", volume_data, width, height, depth);
 
 	Texture3DBuffer volume_texture({
 		.size = uvec3(width, height, depth),
@@ -238,26 +241,24 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
 
 		vec2 mouseDelta = vec2(dx, dy);
 		vec3 target = vec3(0.0, 0.0, 0.0);
-		camera->orbit(mouseDelta, target, 2.0);
+		camera->orbit(mouseDelta, target, orbitRadius);
 	}
 }
 
 void scroll_callback(GLFWwindow* window, double xposIn, double yposIn) {
 	Camera* camera = static_cast<Camera*>(glfwGetWindowUserPointer(window));
-	float currFOV = camera->getFOV();
+	//float currFOV = camera->getFOV();
 
 	float ypos = static_cast<float>(yposIn);
 
-	float sensitivity = 5.00f;
+	float sensitivity = 0.07f;
 	ypos *= sensitivity;
 
-	currFOV -= ypos;
-	if (currFOV < 0.5) {
-		currFOV = 0.5;
+	orbitRadius -= ypos;
+	if (orbitRadius <= 0.1) {
+		orbitRadius = 0.1;
 	}
 
-	if (currFOV > 179.5) {
-		currFOV = 179.5;
-	}
-	camera->updateFOV(currFOV);
+	camera->orbit(vec2(0.0, 0.0), vec3(0.0, 0.0, 0.0), orbitRadius);
+	
 }

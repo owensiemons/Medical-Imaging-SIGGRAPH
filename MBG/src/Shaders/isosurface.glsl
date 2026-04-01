@@ -64,6 +64,15 @@ bool intersectBox(Ray r, AABB aabb, out float t0, out float t1) {
     return t0 <= t1;
 }
 
+vec3 estimate_normal(vec3 p, float intensity) {
+    float d = 0.01;
+    float dx = texture(tex0, p + vec3(d,0,0)).x - intensity;
+    float dy = texture(tex0, p + vec3(0,d,0)).x - intensity;
+    float dz = texture(tex0, p + vec3(0,0,d)).x - intensity;
+    mat3 normal_matrix = mat3(view * model);// temp
+    return -normalize(normal_matrix * vec3(dx, dy, dz));
+}
+
 void main() {
     vec2 resolution = vec2(screen_width, screen_height);
     vec2 uv = (gl_FragCoord.xy / resolution) * 2.0 - 1.0;
@@ -100,30 +109,55 @@ void main() {
     float ray_len = length(ray);
     vec3 step_vec = step_size * ray / ray_len;
 
+    vec3 light_pos = vec3(0.0, 2.0, -2.0);
+    
     float jitter = rand_pcg(rng_seed++) * step_size;
     vec3 pos = ray_start + step_vec * (jitter / step_size);
     ray_len -= jitter;
 
-    vec4 dst = vec4(0.09, 0.09, 0.09, 0);
-    vec4 src = vec4(0, 0, 0, 0);
+    float threshold = 0.1;
+    vec3 color = vec3(0.09);
 
-    float value = 0;
+    float ka = 0.15;
+    float kd = 0.5;
+    float ks = 1.0;
+    float spec_power = 8.0;
+    vec3 mat_color = vec3(1.0);
+    vec3 spec_color = vec3(1.0);
 
     while (ray_len > 0) {
-        value = texture(tex0, pos).x;
+        float intensity = texture(tex0, pos).x;
 
-        src = vec4(value);
-        src.a *= 0.5;
+        if (intensity > threshold) {
+            
+            pos -= step_vec * 0.5;
+            intensity = texture(tex0, pos).x;
+            
+            if (intensity > threshold) {
+                pos -= step_vec * 0.25;
+            } else {
+                pos += step_vec * 0.25;
+            }
 
-        src.xyz *= src.a;
+            intensity = texture(tex0, pos).x;
 
-        dst = (1.0 - dst.a) * src + dst;
+            vec3 light_norm = normalize(light_pos - pos);
+            vec3 ray_norm = -normalize(ray);
+            vec3 vol_norm = estimate_normal(pos, intensity);
+            vec3 half_norm = normalize(light_norm + ray_norm);
 
-        if (dst.a >= 0.95f) { break; }
+            float ambient = ka;
+            float diffuse = kd * max(0, dot(vol_norm, light_norm));
+            float specular = ks * pow(max(0, dot(vol_norm, half_norm)), spec_power);
+
+            color = (ambient + diffuse) * mat_color + specular * spec_color;
+
+            break;
+        }
 
         ray_len -= step_size;
         pos += step_vec;
     }
 
-    frag_color = dst;
+    frag_color = vec4(color, 1.0);
 }
