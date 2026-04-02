@@ -13,7 +13,7 @@ using namespace MBG;
 #include <vector>
 #include "texgen.hpp"
 #include <filesystem>
-#include <glm/ext/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale
+#include <glm/ext/matrix_transform.hpp>
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -28,9 +28,7 @@ float lastY = static_cast<float>(initHeight) / 2.0;
 bool islmbHeld = false;
 float orbitRadius = 2.0;
 
-//messing around with a bounding box and some more discrete data
-
-//TODO: MIP shader, make PBR more PBR, transfer functions, fix light source, add occlusion plane things
+//TODO: MIP shader, make PBR more PBR, transfer functions, fix light source, add occlusion plane things, add temporal accumulation?, add gui
 
 
 int main() {
@@ -120,7 +118,8 @@ int main() {
 
 	// ----------------- Render Pass -----------------------------
 	//RenderPass render_pass_main("Shaders/alpha_blender.glsl");
-	RenderPass render_pass_main("Shaders/isosurface.glsl");
+	//RenderPass render_pass_main("Shaders/isosurface.glsl");
+	RenderPass render_pass_main("Shaders/MIP.glsl");
 	//RenderPass render_pass_main("Shaders/PBR.glsl");
 
 

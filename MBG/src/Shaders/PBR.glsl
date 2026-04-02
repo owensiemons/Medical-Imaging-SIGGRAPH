@@ -80,21 +80,21 @@ float lookup(vec3 world_pos) {
 
 vec3 traceScene(vec3 ro, vec3 rd, AABB aabb, uint rng_seed) {
     // absorption coeff
-    float sigma_a = 0.5;
+    float sigma_a = 0.2;
 
     // scattering coeff
-    float sigma_s = 0.5;
+    float sigma_s = 0.7;
 
     // extinction coeff
     float sigma_t = sigma_a + sigma_s;
 
     // phase function asymmetry (-1, 1)
-    float g = 0.0;
+    float g = 0.2;
 
     vec3 background_color = vec3(0.09);
 
     vec3 light_color = vec3(50);
-    vec3 light_pos = vec3(0.0, 2.0, -2.0);
+    vec3 light_pos = vec3(0.0, 2.0, 2.0);
 
     int n_steps = 48;
     int n_light_steps = 12;
