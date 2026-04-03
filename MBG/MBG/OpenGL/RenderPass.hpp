@@ -21,7 +21,7 @@ class RenderPass {
 public:
 	RenderPass(const std::string& shader_file); 
 	~RenderPass();
-
+	void changeShader(const std::string& shader_file);
 protected:
 	GLuint shader_program_;
 
@@ -46,6 +46,7 @@ private:
 
 	ShaderBlock getShaderBlocks(const std::string& shader_file);
 	GLuint buildShader(const std::string& shader_code, GLenum shader_type);
+	void buildFromFile(const std::string& shader_file);
 };
 
 }

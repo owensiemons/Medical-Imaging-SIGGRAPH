@@ -69,7 +69,7 @@ vec3 estimate_normal(vec3 p, float intensity) {
     float dx = texture(tex0, p + vec3(d,0,0)).x - intensity;
     float dy = texture(tex0, p + vec3(0,d,0)).x - intensity;
     float dz = texture(tex0, p + vec3(0,0,d)).x - intensity;
-    mat3 normal_matrix = mat3(view * model);// temp
+    mat3 normal_matrix = mat3(model);
     return -normalize(normal_matrix * vec3(dx, dy, dz));
 }
 
@@ -109,7 +109,7 @@ void main() {
     float ray_len = length(ray);
     vec3 step_vec = step_size * ray / ray_len;
 
-    vec3 light_pos = vec3(0.0, 2.0, -2.0);
+    vec3 light_pos = vec3(0.0, 0.35, -0.35);
     
     float jitter = rand_pcg(rng_seed++) * step_size;
     vec3 pos = ray_start + step_vec * (jitter / step_size);
@@ -140,9 +140,9 @@ void main() {
             }
 
             intensity = texture(tex0, pos).x;
-
-            vec3 light_norm = normalize(light_pos - pos);
-            vec3 ray_norm = -normalize(ray);
+            vec3 world_pos = 2.0 * pos - 1.0;
+            vec3 light_norm = normalize(light_pos - world_pos);
+            vec3 ray_norm = -rd;
             vec3 vol_norm = estimate_normal(pos, intensity);
             vec3 half_norm = normalize(light_norm + ray_norm);
 

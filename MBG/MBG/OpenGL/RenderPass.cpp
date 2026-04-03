@@ -34,44 +34,9 @@ GLuint RenderPass::buildShader(const std::string& shader_code, GLenum shader_typ
 	return shader_id;
 }
 
-// TODO: this block can be slow because of stringstream
-RenderPass::ShaderBlock RenderPass::getShaderBlocks(const std::string& shader_file) {
-	std::ifstream stream(shader_file);
-	if (!stream) {
-		std::cerr << "Error: shader file doesn't exist " << shader_file << std::endl;
-		return {};
-	}
-
-	std::string line;
-	std::stringstream ss[5];
-	SHADER_TYPE type = SHADER_TYPE::NONE;
-
-	while (getline(stream, line)) {
-		if (line.find("#shader") != std::string::npos) {
-			if (line.find("VERTEX") != std::string::npos) 
-				type = SHADER_TYPE::VERTEX;
-			else if (line.find("TESSELLATION_CONTROL") != std::string::npos) 
-				type = SHADER_TYPE::TESSELLATION_CONTROL;
-			else if (line.find("TESSELLATION_EVALUATION") != std::string::npos) 
-				type = SHADER_TYPE::TESSELLATION_EVALUATION;
-			else if (line.find("GEOMETRY") != std::string::npos) 
-				type = SHADER_TYPE::GEOMETRY;
-			else if (line.find("FRAGMENT") != std::string::npos) 
-				type = SHADER_TYPE::FRAGMENT;
-			else 
-				type = SHADER_TYPE::NONE;
-		}
-		else if (type != SHADER_TYPE::NONE) {
-			ss[(int)type] << line << '\n';
-		}
-	}
-
-	return { ss[0].str(), ss[1].str(), ss[2].str(), ss[3].str(), ss[4].str() };
-}
-
-RenderPass::RenderPass(const std::string& shader_file) {
+void RenderPass::buildFromFile(const std::string& shader_file) {
 	ShaderBlock shader = getShaderBlocks(shader_file);
-	
+
 	shader_program_ = glCreateProgram();
 	assert(shader_program_ != 0); // Error creating shader program
 
@@ -112,8 +77,52 @@ RenderPass::RenderPass(const std::string& shader_file) {
 	}
 }
 
+// TODO: this block can be slow because of stringstream
+RenderPass::ShaderBlock RenderPass::getShaderBlocks(const std::string& shader_file) {
+	std::ifstream stream(shader_file);
+	if (!stream) {
+		std::cerr << "Error: shader file doesn't exist " << shader_file << std::endl;
+		return {};
+	}
+
+	std::string line;
+	std::stringstream ss[5];
+	SHADER_TYPE type = SHADER_TYPE::NONE;
+
+	while (getline(stream, line)) {
+		if (line.find("#shader") != std::string::npos) {
+			if (line.find("VERTEX") != std::string::npos) 
+				type = SHADER_TYPE::VERTEX;
+			else if (line.find("TESSELLATION_CONTROL") != std::string::npos) 
+				type = SHADER_TYPE::TESSELLATION_CONTROL;
+			else if (line.find("TESSELLATION_EVALUATION") != std::string::npos) 
+				type = SHADER_TYPE::TESSELLATION_EVALUATION;
+			else if (line.find("GEOMETRY") != std::string::npos) 
+				type = SHADER_TYPE::GEOMETRY;
+			else if (line.find("FRAGMENT") != std::string::npos) 
+				type = SHADER_TYPE::FRAGMENT;
+			else 
+				type = SHADER_TYPE::NONE;
+		}
+		else if (type != SHADER_TYPE::NONE) {
+			ss[(int)type] << line << '\n';
+		}
+	}
+
+	return { ss[0].str(), ss[1].str(), ss[2].str(), ss[3].str(), ss[4].str() };
+}
+
+RenderPass::RenderPass(const std::string& shader_file) {
+	buildFromFile(shader_file);
+}
+
 RenderPass::~RenderPass() {
 	glDeleteProgram(shader_program_);
+}
+
+void RenderPass::changeShader(const std::string& shader_file) {
+	glDeleteProgram(shader_program_);
+	buildFromFile(shader_file);
 }
 
 }

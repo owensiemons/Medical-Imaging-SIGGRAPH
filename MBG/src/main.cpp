@@ -28,7 +28,13 @@ float lastY = static_cast<float>(initHeight) / 2.0;
 bool islmbHeld = false;
 float orbitRadius = 2.0;
 
-//TODO: MIP shader, make PBR more PBR, transfer functions, fix light source, add occlusion plane things, add temporal accumulation?, add gui
+std::vector<std::string> shader_files = {
+	"Shaders/alpha_blender.glsl",
+	"Shaders/isosurface.glsl",
+	"Shaders/MIP.glsl",
+	"Shaders/PBR.glsl"
+};
+//TODO: make PBR more PBR, transfer functions, add occlusion plane things, add temporal accumulation?, add gui, fix mess with texture / world space in shaders
 
 
 int main() {
@@ -117,10 +123,7 @@ int main() {
 
 
 	// ----------------- Render Pass -----------------------------
-	//RenderPass render_pass_main("Shaders/alpha_blender.glsl");
-	//RenderPass render_pass_main("Shaders/isosurface.glsl");
-	RenderPass render_pass_main("Shaders/MIP.glsl");
-	//RenderPass render_pass_main("Shaders/PBR.glsl");
+	RenderPass render_pass_main(shader_files[3]);// 0 = alpha blender, 1 = isosurface, 2 = MIP 3 = PBR
 
 
 	// ----------------- Texture Stuff -----------------------------
@@ -155,7 +158,6 @@ int main() {
 		});
 
 
-
 	// ----------------- Construct Frame Graph -----------------------------
 	FrameGraph graph(window);
 
@@ -173,7 +175,6 @@ int main() {
 	graph.addNodeDisplay(); // Finally we display the frame
 
 	graph.build();
-
 	while (!window.isClosed()) {
 		graph.run();
 
@@ -191,7 +192,7 @@ int main() {
 			inverse(proj_matrix), inverse(view_matrix),
 			frame_count
 		};
-		
+
 		ubo.remapData((size_t)sizeof(window_data), &window_data, 0);
 
 		frame_count++;
