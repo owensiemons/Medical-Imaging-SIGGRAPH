@@ -145,7 +145,7 @@ void main() {
     float kd = 0.5;
     float ks = 1.0;
     float spec_power = 8.0;
-    vec3 mat_color = vec3(1.0);
+    vec3 mat_color = vec3(1.0); // Maybe use a transfer function for this
     vec3 spec_color = vec3(1.0);
 
     while (ray_len > 0) {

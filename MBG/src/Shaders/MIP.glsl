@@ -84,9 +84,16 @@ bool intersectBox(Ray r, AABB aabb, out float t0, out float t1) {
     return t0 <= t1;
 }
 
-float lookup(vec3 pos) {
-    vec3 tex_space = (pos - aabb_min) / (aabb_max - aabb_min);
-    return texture(tex0, tex_space).x;
+vec3 to_tex_space(vec3 pos) {
+    return (pos - aabb_min) / (aabb_max - aabb_min);
+}
+
+vec3 transfer_func(float x) {// assumes x in texture space
+   return vec3(x, x, x);
+}
+
+vec3 lookup(vec3 pos) {
+    return transfer_func(texture(tex0, to_tex_space(pos)).x);
 }
 
 void main() {
@@ -126,23 +133,24 @@ void main() {
     vec3 pos = ray_start + step_vec * (jitter / step_size);
     ray_len -= jitter;
 
-    vec4 dst = vec4(0.09, 0.09, 0.09, 0);
-    vec4 src = vec4(0, 0, 0, 0);
-
     float value = 0;
+    vec3 col = vec3(0.0, 0.0, 0.0);
 
     float max_intensity = 0.09;
+    vec3 max_col = vec3(0.09, 0.09, 0.09);
 
     while (ray_len > 0) {
-        value = lookup(pos);
+        value = texture(tex0, to_tex_space(pos)).x;
+        col = lookup(pos);
 
         if (value > max_intensity) {
             max_intensity = value;
+            max_col = col;
         }
 
         ray_len -= step_size;
         pos += step_vec;
     }
 
-    frag_color = vec4(max_intensity, max_intensity, max_intensity, 1.0);
+    frag_color = vec4(max_col, 1.0);
 }

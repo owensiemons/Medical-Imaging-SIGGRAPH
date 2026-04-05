@@ -84,9 +84,16 @@ bool intersectBox(Ray r, AABB aabb, out float t0, out float t1) {
     return t0 <= t1;
 }
 
-float lookup(vec3 pos) {
-    vec3 tex_space = (pos - aabb_min) / (aabb_max - aabb_min);
-    return texture(tex0, tex_space).x;
+vec3 to_tex_space(vec3 pos) {
+    return (pos - aabb_min) / (aabb_max - aabb_min);
+}
+
+vec4 transfer_func(float x) {// assumes x in texture space
+   return vec4(x, x, x, x);
+}
+
+vec4 lookup(vec3 pos) {
+    return transfer_func(texture(tex0, to_tex_space(pos)).x);
 }
 
 void main() {
@@ -129,12 +136,8 @@ void main() {
     vec4 dst = vec4(0.09, 0.09, 0.09, 0);
     vec4 src = vec4(0, 0, 0, 0);
 
-    float value = 0;
-
     while (ray_len > 0) {
-        value = lookup(pos);
-
-        src = vec4(value);
+        src = lookup(pos);
         src.a *= 0.5;
 
         src.xyz *= src.a;
