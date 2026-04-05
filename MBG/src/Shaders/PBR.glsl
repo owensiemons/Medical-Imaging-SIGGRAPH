@@ -1,21 +1,11 @@
 #shader VERTEX
 #version 420 core
-
 layout(location = 0) in vec3 position;
 
-void main() {
-    gl_Position = vec4(position, 1.0);
-}
-
-
-
-#shader FRAGMENT
-#version 420 core
-
 layout(std140, binding = 0) uniform uniforms {
-    float screen_width;
-    float screen_height;
-    float pad0, pad1;
+    vec2 screen_size;
+    uint frame_cnt;
+    float pad_;
 
     mat4 proj;
     mat4 view;
@@ -24,7 +14,37 @@ layout(std140, binding = 0) uniform uniforms {
     mat4 inv_proj;
     mat4 inv_view;
 
+    vec3 aabb_max;
+    float pad0_;
+    vec3 aabb_min;
+    float pad1_;
+};
+
+void main() {
+    gl_Position = proj * view * vec4(position, 1.0);
+}
+
+
+
+#shader FRAGMENT
+#version 420 core
+
+layout(std140, binding = 0) uniform uniforms {
+    vec2 screen_size;
     uint frame_cnt;
+    float pad_;
+
+    mat4 proj;
+    mat4 view;
+    mat4 model;
+
+    mat4 inv_proj;
+    mat4 inv_view;
+
+    vec3 aabb_max;
+    float pad0_;
+    vec3 aabb_min;
+    float pad1_;
 };
 
 uniform sampler3D tex0;
@@ -73,9 +93,9 @@ float phaseHG(vec3 rd, vec3 light_dir, float g) {
 }
 
 // handles changing space
-float lookup(vec3 world_pos) {
-    vec3 tex = 0.5 * (world_pos + 1.0);
-    return texture(tex0, tex).x;
+float lookup(vec3 pos) {
+    vec3 tex_space = (pos - aabb_min) / (aabb_max - aabb_min);
+    return texture(tex0, tex_space).x;
 }
 
 vec3 traceScene(vec3 ro, vec3 rd, AABB aabb, uint rng_seed) {
@@ -178,14 +198,14 @@ vec3 traceScene(vec3 ro, vec3 rd, AABB aabb, uint rng_seed) {
 }
 
 void main() {
-    vec2 resolution = vec2(screen_width, screen_height);
+    vec2 resolution = screen_size;
     vec2 uv = (gl_FragCoord.xy / resolution) * 2.0 - 1.0;
     vec3 ro = vec3(inv_view[3]);
     vec4 ray_clip = vec4(uv, -1.0, 1.0);
     vec4 ray_view = inv_proj * ray_clip;
     ray_view = vec4(ray_view.xy, -1.0, 0.0);
     vec3 rd = normalize(vec3(inv_view * ray_view));
-    AABB aabb = AABB(vec3(-1.0), vec3(+1.0));
+    AABB aabb = AABB(aabb_min, aabb_max);
 
     uint seed = uint(gl_FragCoord.x) + uint(gl_FragCoord.y) * 1000u + frame_cnt * 1000000u;
     vec3 color = traceScene(ro, rd, aabb, seed);

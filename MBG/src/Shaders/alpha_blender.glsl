@@ -1,21 +1,11 @@
 #shader VERTEX
 #version 420 core
-
 layout(location = 0) in vec3 position;
 
-void main() {
-    gl_Position = vec4(position, 1.0);
-}
-
-
-
-#shader FRAGMENT
-#version 420 core
-
 layout(std140, binding = 0) uniform uniforms {
-    float screen_width;
-    float screen_height;
-    float pad0, pad1;
+    vec2 screen_size;
+    uint frame_cnt;
+    float pad_;
 
     mat4 proj;
     mat4 view;
@@ -24,7 +14,37 @@ layout(std140, binding = 0) uniform uniforms {
     mat4 inv_proj;
     mat4 inv_view;
 
+    vec3 aabb_max;
+    float pad0_;
+    vec3 aabb_min;
+    float pad1_;
+};
+
+void main() {
+    gl_Position = proj * view * vec4(position, 1.0);
+}
+
+
+
+#shader FRAGMENT
+#version 420 core
+
+layout(std140, binding = 0) uniform uniforms {
+    vec2 screen_size;
     uint frame_cnt;
+    float pad_;
+
+    mat4 proj;
+    mat4 view;
+    mat4 model;
+
+    mat4 inv_proj;
+    mat4 inv_view;
+
+    vec3 aabb_max;
+    float pad0_;
+    vec3 aabb_min;
+    float pad1_;
 };
 
 uniform sampler3D tex0;
@@ -64,8 +84,13 @@ bool intersectBox(Ray r, AABB aabb, out float t0, out float t1) {
     return t0 <= t1;
 }
 
+float lookup(vec3 pos) {
+    vec3 tex_space = (pos - aabb_min) / (aabb_max - aabb_min);
+    return texture(tex0, tex_space).x;
+}
+
 void main() {
-    vec2 resolution = vec2(screen_width, screen_height);
+    vec2 resolution = screen_size;
     vec2 uv = (gl_FragCoord.xy / resolution) * 2.0 - 1.0;
     vec3 ro = vec3(inv_view[3]);
 
@@ -77,7 +102,7 @@ void main() {
 
     Ray main_ray = Ray(ro, rd);
 
-    AABB aabb = AABB(vec3(-1.0), vec3(+1.0));
+    AABB aabb = AABB(aabb_min, aabb_max);
 
     float tnear, tfar;
 
@@ -93,9 +118,6 @@ void main() {
     vec3 ray_start = main_ray.ro + main_ray.rd * tnear;
     vec3 ray_stop = main_ray.ro + main_ray.rd * tfar;
 
-    ray_start = 0.5 * (ray_start + 1.0);
-    ray_stop = 0.5 * (ray_stop + 1.0);
-
     vec3 ray = ray_stop - ray_start;
     float ray_len = length(ray);
     vec3 step_vec = step_size * ray / ray_len;
@@ -110,7 +132,7 @@ void main() {
     float value = 0;
 
     while (ray_len > 0) {
-        value = texture(tex0, pos).x;
+        value = lookup(pos);
 
         src = vec4(value);
         src.a *= 0.5;

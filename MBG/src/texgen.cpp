@@ -59,15 +59,13 @@ std::vector<unsigned char> Load3DTexture(const std::string& folder, uint32_t& wi
     return volumeData;
 }
 
-void Load3DTextureBinary(const std::string& folder, unsigned char*& buffer, uint32_t& width, uint32_t& height, int& depth) {
-
-   
+void Load3DTextureBinary(const std::string& folder, unsigned char*& buffer, uint32_t& width, uint32_t& height, uint32_t& depth) {
     std::streampos size;
     char* memblock;
 
     width = 512;
-    height = 512;
-    depth = 208;
+    height = 208;
+    depth = 512;
 
     std::ifstream file(folder, std::ios::in | std::ios::binary | std::ios::ate);
     if (file.is_open()) {

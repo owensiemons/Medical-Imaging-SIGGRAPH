@@ -69,7 +69,7 @@ include(CTest)
 include(Catch)
 catch_discover_tests(MBG)
 
-add_custom_target(copy_shaders ALL
-    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_LIST_DIR}/copy_shaders.cmake
+add_custom_target(copy_folders ALL
+    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_LIST_DIR}/copy_folders.cmake
 )
-add_dependencies(MBG copy_shaders)
+add_dependencies(MBG copy_folders)

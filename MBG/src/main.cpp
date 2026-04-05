@@ -34,7 +34,7 @@ std::vector<std::string> shader_files = {
 	"Shaders/MIP.glsl",
 	"Shaders/PBR.glsl"
 };
-//TODO: make PBR more PBR, transfer functions, add occlusion plane things, add temporal accumulation?, add gui, fix mess with texture / world space in shaders
+//TODO: make PBR more PBR, transfer functions, add occlusion plane things, add temporal accumulation?, add gui
 
 
 int main() {
@@ -50,30 +50,67 @@ int main() {
 	Camera camera(vec3(0.0, 0.0, -2.0), (float)window.getWidth() / (float)window.getHeight());
 	glfwSetWindowUserPointer(glfw_wind, &camera);
 
+	// ----------------- Texture Stuff -----------------------------
+	uint32_t width, height, depth;
+	//std::vector<unsigned char> volume_vector = Load3DTexture("C:/Users/rowan/Documents/Graphics/data/8bit", width, height, depth);//Replace with your own
+	unsigned char* volume_data = nullptr;//volume_vector.data();
+	std::cout << std::filesystem::absolute("Data/ct_scan.raw") << std::endl;
+	Load3DTextureBinary("Data/ct_scan.raw", volume_data, width, height, depth);
+
+	Texture3DBuffer volume_texture({
+		.size = uvec3(width, height, depth),
+		.format = TEXTURE_TYPE::R8,
+		.min_filter = TEXTURE_FILTER::LINEAR,
+		.mag_filter = TEXTURE_FILTER::LINEAR,
+		.wrap_s = TEXTURE_WRAP::CLAMP_TO_EDGE,
+		.wrap_t = TEXTURE_WRAP::CLAMP_TO_EDGE,
+		.wrap_r = TEXTURE_WRAP::CLAMP_TO_EDGE,
+		.data = volume_data,
+		});
+
+	// scale the bounding box to match the dimensions of the data, no warping
+
+	float vx = 0.5f, vy = 1.0f, vz = 0.5f; // This is the spacing between voxels from the .nii, ex print(scan.header.get_zooms())
+	float px = width * vx;
+	float py = height * vy;
+	float pz = depth * vz;
+
+	float max_phys = max(px, max(py, pz));
+	float sx = px / max_phys;
+	float sy = py / max_phys;
+	float sz = pz / max_phys;
+
 	// ----------------- Uniforms -----------------------------
 	mat4 proj_matrix = camera.getCameraProjMat();
 	mat4 view_matrix = camera.getCameraViewMat();
 
-	mat4 model_matrix = glm::rotate(mat4(1.0f), glm::radians(-157.00f), vec3(0.0, 0.0, 1.0));
+	glm::mat4 model_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(sx, sy, sz));// only in isosurface
 
 	uint frame_count = 0;
 
 	struct uniforms {
-		float screen_width;
-		float screen_height;
-		float pad0, pad1;
+		vec2 screen_size;
+		uint frame_cnt;
+		float pad_;// 16 bytes
 
 		mat4 proj;
 		mat4 view;
-		mat4 model;
+		mat4 model;// 192 bytes
 
 		mat4 inv_proj;
-		mat4 inv_view;
+		mat4 inv_view;// 128 bytes
 
-		uint frame_cnt;
+		vec3 aabb_max;
+		float pad0_;
+		vec3 aabb_min;
+		float pad1_;// 32 bytes
 	};
 
-	uniforms uniform_data = { (float)window.getWidth(), (float)window.getHeight(), 0.0f, 0.0f, proj_matrix, view_matrix, model_matrix, inverse(proj_matrix), inverse(view_matrix), frame_count};
+	uniforms uniform_data = { vec2((float)window.getWidth(), (float)window.getHeight()),
+		frame_count, 0.0, proj_matrix, view_matrix, model_matrix,
+		inverse(proj_matrix), inverse(view_matrix),
+		vec3(sx, sy, sz), 0.0, vec3(-sx,-sy,-sz), 0.0
+	};
 
 	UniformBufferParams params({
 		.data = &uniform_data,
@@ -94,23 +131,23 @@ int main() {
 
 	std::vector<Vertex> vertex_data = {
 		// front
-		{vec3(-1.0, -1.0,  1.0)}, {vec3(1.0, -1.0,  1.0)}, {vec3(1.0,  1.0,  1.0)},
-		{vec3(-1.0, -1.0,  1.0)}, {vec3(1.0,  1.0,  1.0)}, {vec3(-1.0,  1.0,  1.0)},
+		{vec3(-sx, -sy,  sz)}, {vec3(sx, -sy,  sz)}, {vec3(sx,  sy,  sz)},
+		{vec3(-sx, -sy,  sz)}, {vec3(sx,  sy,  sz)}, {vec3(-sx,  sy,  sz)},
 		// back
-		{vec3(1.0, -1.0, -1.0)}, {vec3(-1.0, -1.0, -1.0)}, {vec3(-1.0,  1.0, -1.0)},
-		{vec3(1.0, -1.0, -1.0)}, {vec3(-1.0,  1.0, -1.0)}, {vec3(1.0,  1.0, -1.0)},
+		{vec3(sx, -sy, -sz)}, {vec3(-sx, -sy, -sz)}, {vec3(-sx,  sy, -sz)},
+		{vec3(sx, -sy, -sz)}, {vec3(-sx,  sy, -sz)}, {vec3(sx,  sy, -sz)},
 		// left
-		{vec3(-1.0, -1.0, -1.0)}, {vec3(-1.0, -1.0,  1.0)}, {vec3(-1.0,  1.0,  1.0)},
-		{vec3(-1.0, -1.0, -1.0)}, {vec3(-1.0,  1.0,  1.0)}, {vec3(-1.0,  1.0, -1.0)},
+		{vec3(-sx, -sy, -sz)}, {vec3(-sx, -sy,  sz)}, {vec3(-sx,  sy,  sz)},
+		{vec3(-sx, -sy, -sz)}, {vec3(-sx,  sy,  sz)}, {vec3(-sx,  sy, -sz)},
 		// right
-		{vec3(1.0, -1.0,  1.0)}, {vec3(1.0, -1.0, -1.0)}, {vec3(1.0,  1.0, -1.0)},
-		{vec3(1.0, -1.0,  1.0)}, {vec3(1.0,  1.0, -1.0)}, {vec3(1.0,  1.0,  1.0)},
+		{vec3(sx, -sy,  sz)}, {vec3(sx, -sy, -sz)}, {vec3(sx,  sy, -sz)},
+		{vec3(sx, -sy,  sz)}, {vec3(sx,  sy, -sz)}, {vec3(sx,  sy,  sz)},
 		// top
-		{vec3(-1.0,  1.0,  1.0)}, {vec3(1.0,  1.0,  1.0)}, {vec3(1.0,  1.0, -1.0)},
-		{vec3(-1.0,  1.0,  1.0)}, {vec3(1.0,  1.0, -1.0)}, {vec3(-1.0,  1.0, -1.0)},
+		{vec3(-sx,  sy,  sz)}, {vec3(sx,  sy,  sz)}, {vec3(sx,  sy, -sz)},
+		{vec3(-sx,  sy,  sz)}, {vec3(sx,  sy, -sz)}, {vec3(-sx,  sy, -sz)},
 		// bottom
-		{vec3(-1.0, -1.0, -1.0)}, {vec3(1.0, -1.0, -1.0)}, {vec3(1.0, -1.0,  1.0)},
-		{vec3(-1.0, -1.0, -1.0)}, {vec3(1.0, -1.0,  1.0)}, {vec3(-1.0, -1.0,  1.0)},
+		{vec3(-sx, -sy, -sz)}, {vec3(sx, -sy, -sz)}, {vec3(sx, -sy,  sz)},
+		{vec3(-sx, -sy, -sz)}, {vec3(sx, -sy,  sz)}, {vec3(-sx, -sy,  sz)},
 	};
 
 	VertexBuffer vertex_buffer({
@@ -121,29 +158,8 @@ int main() {
 		});
 
 
-
 	// ----------------- Render Pass -----------------------------
-	RenderPass render_pass_main(shader_files[3]);// 0 = alpha blender, 1 = isosurface, 2 = MIP 3 = PBR
-
-
-	// ----------------- Texture Stuff -----------------------------
-	
-	uint32_t width, height;
-	int depth;
-	//std::vector<unsigned char> volume_vector = Load3DTexture("C:/Users/rowan/Documents/Graphics/data/8bit", width, height, depth);//Replace with your own
-	unsigned char* volume_data = nullptr;//volume_vector.data();
-	Load3DTextureBinary("C:/Users/rowan/Documents/Graphics/ct_scan.raw", volume_data, width, height, depth);
-
-	Texture3DBuffer volume_texture({
-		.size = uvec3(width, height, depth),
-		.format = TEXTURE_TYPE::R8,
-		.min_filter = TEXTURE_FILTER::LINEAR,
-		.mag_filter = TEXTURE_FILTER::LINEAR,
-		.wrap_s = TEXTURE_WRAP::CLAMP_TO_EDGE,
-		.wrap_t = TEXTURE_WRAP::CLAMP_TO_EDGE,
-		.wrap_r = TEXTURE_WRAP::CLAMP_TO_EDGE,
-		.data = volume_data,
-	});
+	RenderPass render_pass_main(shader_files[2]);// 0 = alpha blender, 1 = isosurface, 2 = MIP 3 = PBR
 	
 	// ----------------- Descriptor Set -----------------------------
 	Descriptor descriptors[] = {
@@ -162,7 +178,7 @@ int main() {
 	FrameGraph graph(window);
 
 	graph.addNode({
-		.color = vec4(0.0, 0.0, 0.0, 1.0),
+		.color = vec4(0.09, 0.09, 0.09, 1.0),
 		});
 
 	// Render the geometry
@@ -181,16 +197,19 @@ int main() {
 		int fbWidth, fbHeight;
 		glfwGetFramebufferSize(glfw_wind, &fbWidth, &fbHeight);
 
-		camera.updateAspectRatio((float)fbWidth / (float)fbHeight);
+		if (fbHeight > 0) {
+			camera.updateAspectRatio((float)fbWidth / (float)fbHeight);
+		}
 
 		proj_matrix = camera.getCameraProjMat();
 		view_matrix = camera.getCameraViewMat();
 
 		uniforms window_data = {
-			(float)fbWidth, (float)fbHeight, 0.0f, 0.0f,
+			vec2((float)fbWidth, (float)fbHeight),
+			frame_count, 0.0,
 			proj_matrix, view_matrix, model_matrix,
 			inverse(proj_matrix), inverse(view_matrix),
-			frame_count
+			vec3(sx, sy, sz), 0.0, vec3(-sx,-sy,-sz), 0.0
 		};
 
 		ubo.remapData((size_t)sizeof(window_data), &window_data, 0);
