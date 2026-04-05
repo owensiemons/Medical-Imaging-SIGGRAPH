@@ -28,13 +28,15 @@ float lastY = static_cast<float>(initHeight) / 2.0;
 bool islmbHeld = false;
 float orbitRadius = 2.0;
 
+uint shader_idx = 0;
+
 std::vector<std::string> shader_files = {
 	"Shaders/alpha_blender.glsl",
 	"Shaders/isosurface.glsl",
 	"Shaders/MIP.glsl",
 	"Shaders/PBR.glsl"
 };
-//TODO: make PBR more PBR, transfer functions, add occlusion plane things, add temporal accumulation?, add gui
+// TODO: make PBR more PBR, transfer functions, add occlusion plane things, add temporal accumulation?, add gui
 
 
 int main() {
@@ -46,13 +48,17 @@ int main() {
 	glfwSetCursorPosCallback(glfw_wind, mouse_callback);
 	glfwSetScrollCallback(glfw_wind, scroll_callback);
 
+	std::vector<void*> callback_ptrs;
+	glfwSetWindowUserPointer(glfw_wind, &callback_ptrs);
+	// ^^ We need to be able to pass the camera, renderpass, etc. objects to the callback functions, we need to use WindowUserPointer for that,
+	// my solution is to use a vector of void* and static cast them into the correct objects later
+
 	// ----------------- Camera -----------------------------
 	Camera camera(vec3(0.0, 0.0, -2.0), (float)window.getWidth() / (float)window.getHeight());
-	glfwSetWindowUserPointer(glfw_wind, &camera);
+	callback_ptrs.push_back(static_cast<void*>(&camera));
 
 	// ----------------- Texture Stuff -----------------------------
 	uint32_t width, height, depth;
-	//std::vector<unsigned char> volume_vector = Load3DTexture("C:/Users/rowan/Documents/Graphics/data/8bit", width, height, depth);//Replace with your own
 	unsigned char* volume_data = nullptr;//volume_vector.data();
 	std::cout << std::filesystem::absolute("Data/ct_scan.raw") << std::endl;
 	Load3DTextureBinary("Data/ct_scan.raw", volume_data, width, height, depth);
@@ -160,7 +166,8 @@ int main() {
 
 	// ----------------- Render Pass -----------------------------
 	RenderPass render_pass_main(shader_files[2]);// 0 = alpha blender, 1 = isosurface, 2 = MIP 3 = PBR
-	
+	callback_ptrs.push_back(static_cast<void*>(&render_pass_main));
+
 	// ----------------- Descriptor Set -----------------------------
 	Descriptor descriptors[] = {
 		{DESCRIPTOR_TYPE::VERTEX_BUFFER_IN, (void*)&vertex_buffer, nullptr},
@@ -228,11 +235,20 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 			islmbHeld = false;
 		}
 	}
+
+	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+		std::vector<void*>* callback_ptrs = static_cast<std::vector<void*>*>(glfwGetWindowUserPointer(window));
+		RenderPass* render_pass_main = static_cast<RenderPass*>((*callback_ptrs)[1]);
+
+		render_pass_main->changeShader(shader_files[shader_idx % shader_files.size()]);
+		shader_idx++;
+	}
 }
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
 	if (islmbHeld) {
-		Camera* camera = static_cast<Camera*>(glfwGetWindowUserPointer(window));
+		std::vector<void*>* callback_ptrs = static_cast<std::vector<void*>*>(glfwGetWindowUserPointer(window));
+		Camera* camera = static_cast<Camera*>((*callback_ptrs)[0]);
 
 		float xpos = static_cast<float>(xposIn);
 		float ypos = static_cast<float>(yposIn);
@@ -279,5 +295,5 @@ void scroll_callback(GLFWwindow* window, double xposIn, double yposIn) {
 	}
 
 	camera->orbit(vec2(0.0, 0.0), vec3(0.0, 0.0, 0.0), orbitRadius);
-	
+
 }
