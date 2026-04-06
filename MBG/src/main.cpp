@@ -281,7 +281,8 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
 }
 
 void scroll_callback(GLFWwindow* window, double xposIn, double yposIn) {
-	Camera* camera = static_cast<Camera*>(glfwGetWindowUserPointer(window));
+	std::vector<void*>* callback_ptrs = static_cast<std::vector<void*>*>(glfwGetWindowUserPointer(window));
+	Camera* camera = static_cast<Camera*>((*callback_ptrs)[0]);
 	//float currFOV = camera->getFOV();
 
 	float ypos = static_cast<float>(yposIn);
