@@ -169,7 +169,7 @@ void main() {
             vec3 half_norm = normalize(light_norm + ray_norm);
 
             float ambient = ka;
-            float diffuse = kd * max(0, dot(vol_norm, light_norm));
+            float diffuse = kd * max(0, dot(vol_norm, light_norm));// add light color
             float specular = ks * pow(max(0, dot(vol_norm, half_norm)), spec_power);
 
             color = (ambient + diffuse) * mat_color + specular * spec_color;

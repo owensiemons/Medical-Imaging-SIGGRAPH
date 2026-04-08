@@ -88,7 +88,7 @@ vec3 to_tex_space(vec3 pos) {
     return (pos - aabb_min) / (aabb_max - aabb_min);
 }
 
-vec3 transfer_func(float x) {// assumes x in texture space
+vec3 transfer_func(float x) {// Not needed in MIP?
    return vec3(x, x, x);
 }
 

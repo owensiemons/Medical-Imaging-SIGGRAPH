@@ -155,6 +155,7 @@ enum class DESCRIPTOR_TYPE {
 	TEXTURE_ARRAY_BUFFER_OUT,
 
 	UNIFORM_BUFFER,
+	SHADER_STORAGE_BUFFER,
 };
 
 struct VertexView {
@@ -197,6 +198,11 @@ struct Texture3DView {
 };
 
 struct UniformView {
+	uint start;
+	uint size;
+};
+
+struct SSBOView {
 	uint start;
 	uint size;
 };
@@ -696,6 +702,17 @@ struct UniformBufferParams {
 	void* data = nullptr;
 	uint size = 0;
 	BUFFER_USAGE buffer_usage = BUFFER_USAGE::STREAM_DRAW;
+};
+
+//------------------------------------------------------------
+// SSBO BUFFER OBJECT
+//------------------------------------------------------------
+
+struct ShaderStorageBufferParams {// Explicit binding
+	void* data = nullptr;
+	uint size = 0;
+	BUFFER_USAGE buffer_usage = BUFFER_USAGE::STREAM_DRAW;
+	GLuint binding = 3;
 };
 
 //------------------------------------------------------------

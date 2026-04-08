@@ -35,7 +35,7 @@ namespace MBG {
 		}
 
 		inline const void remapData(size_t write_size, void* data, GLintptr offset) {
-			size_ = write_size; //TODO: bad maybe?
+			size_ = write_size; // TODO: bad maybe?
 			glBindBuffer(GL_UNIFORM_BUFFER, uniform_id_);
 			glBufferSubData(GL_UNIFORM_BUFFER, offset, write_size, data);
 		}

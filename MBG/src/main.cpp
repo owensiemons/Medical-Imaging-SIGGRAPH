@@ -1,41 +1,11 @@
-#include <glm/glm.hpp>
+#include "common.hpp"
+
 using namespace glm;
-
-#include "../MBG/OpenGL/MBG.hpp"
 using namespace MBG;
-
-#include "camera.hpp"
-
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <array>
-#include <vector>
-#include "texgen.hpp"
-#include <filesystem>
-#include <glm/ext/matrix_transform.hpp>
-
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void scroll_callback(GLFWwindow* window, double xpos, double ypos);
 
 int initWidth = 1600;
 int initHeight = 1200;
 
-bool firstMouse = true;
-float lastX = static_cast<float>(initWidth) / 2.0;
-float lastY = static_cast<float>(initHeight) / 2.0;
-bool islmbHeld = false;
-float orbitRadius = 2.0;
-
-uint shader_idx = 0;
-
-std::vector<std::string> shader_files = {
-	"Shaders/alpha_blender.glsl",
-	"Shaders/isosurface.glsl",
-	"Shaders/MIP.glsl",
-	"Shaders/PBR.glsl"
-};
 // TODO: make PBR more PBR, transfer functions, add occlusion plane things, add temporal accumulation?, add gui
 
 
@@ -86,6 +56,24 @@ int main() {
 	float sy = py / max_phys;
 	float sz = pz / max_phys;
 
+	// ----------------- SSBOs (transfer function) -----------------------------
+	transfer_elem transfer_data[3] = {// This should be sorted by the density value
+		{vec3(0.5, 0.255, 1.0), 0.1},
+		{vec3(0.8, 0.3, 0.5), 0.5},
+		{vec3(1.0, 0.65, 0.0), 0.6}
+	};
+	uint transfer_data_size = sizeof(transfer_data) / sizeof(transfer_data[0]);
+
+	ShaderStorageBufferParams ssbo_params({
+		.data = &transfer_data,
+		.size = sizeof(transfer_data),
+		.buffer_usage = BUFFER_USAGE::DYNAMIC_DRAW,
+		.binding = 3,
+		});
+
+	ShaderStorageBuffer ssbo(ssbo_params);
+
+
 	// ----------------- Uniforms -----------------------------
 	mat4 proj_matrix = camera.getCameraProjMat();
 	mat4 view_matrix = camera.getCameraViewMat();
@@ -94,37 +82,19 @@ int main() {
 
 	uint frame_count = 0;
 
-	struct uniforms {
-		vec2 screen_size;
-		uint frame_cnt;
-		float pad_;// 16 bytes
-
-		mat4 proj;
-		mat4 view;
-		mat4 model;// 192 bytes
-
-		mat4 inv_proj;
-		mat4 inv_view;// 128 bytes
-
-		vec3 aabb_max;
-		float pad0_;
-		vec3 aabb_min;
-		float pad1_;// 32 bytes
-	};
-
 	uniforms uniform_data = { vec2((float)window.getWidth(), (float)window.getHeight()),
 		frame_count, 0.0, proj_matrix, view_matrix, model_matrix,
 		inverse(proj_matrix), inverse(view_matrix),
-		vec3(sx, sy, sz), 0.0, vec3(-sx,-sy,-sz), 0.0
+		vec3(sx, sy, sz), 0.0, vec3(-sx,-sy,-sz), 0.0, transfer_data_size
 	};
 
-	UniformBufferParams params({
+	UniformBufferParams ubo_params({
 		.data = &uniform_data,
 		.size = sizeof(uniform_data),
 		.buffer_usage = BUFFER_USAGE::STATIC_DRAW,
 		});
 
-	UniformBuffer ubo(params);
+	UniformBuffer ubo(ubo_params);
 
 	// ----------------- Vertex Buffer -----------------------------
 	struct Vertex {
@@ -165,14 +135,15 @@ int main() {
 
 
 	// ----------------- Render Pass -----------------------------
-	RenderPass render_pass_main(shader_files[2]);// 0 = alpha blender, 1 = isosurface, 2 = MIP 3 = PBR
+	RenderPass render_pass_main(shader_files[0]);// 0 = alpha blender, 1 = isosurface, 2 = MIP 3 = PBR
 	callback_ptrs.push_back(static_cast<void*>(&render_pass_main));
 
 	// ----------------- Descriptor Set -----------------------------
 	Descriptor descriptors[] = {
 		{DESCRIPTOR_TYPE::VERTEX_BUFFER_IN, (void*)&vertex_buffer, nullptr},
 		{DESCRIPTOR_TYPE::UNIFORM_BUFFER, (void*)&ubo, nullptr},
-		{DESCRIPTOR_TYPE::TEXTURE_3D_BUFFER_IN, (void*)&volume_texture, nullptr}
+		{DESCRIPTOR_TYPE::TEXTURE_3D_BUFFER_IN, (void*)&volume_texture, nullptr},
+		{DESCRIPTOR_TYPE::SHADER_STORAGE_BUFFER, (void*)&ssbo, nullptr }
 	};
 
 	DescriptorSetBuffer descriptor_set({
@@ -195,7 +166,7 @@ int main() {
 		.descriptor_set = &descriptor_set,
 		});
 
-	graph.addNodeDisplay(); // Finally we display the frame
+	graph.addNodeDisplay(); // display frame
 
 	graph.build();
 	while (!window.isClosed()) {
@@ -216,85 +187,11 @@ int main() {
 			frame_count, 0.0,
 			proj_matrix, view_matrix, model_matrix,
 			inverse(proj_matrix), inverse(view_matrix),
-			vec3(sx, sy, sz), 0.0, vec3(-sx,-sy,-sz), 0.0
+			vec3(sx, sy, sz), 0.0, vec3(-sx,-sy,-sz), 0.0, transfer_data_size
 		};
 
 		ubo.remapData((size_t)sizeof(window_data), &window_data, 0);
 
 		frame_count++;
 	}
-}
-
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
-	if (button == GLFW_MOUSE_BUTTON_LEFT) {
-		if (action == GLFW_PRESS) {
-			islmbHeld = true;
-			firstMouse = true;
-		}
-		else if (action == GLFW_RELEASE) {
-			islmbHeld = false;
-		}
-	}
-
-	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
-		std::vector<void*>* callback_ptrs = static_cast<std::vector<void*>*>(glfwGetWindowUserPointer(window));
-		RenderPass* render_pass_main = static_cast<RenderPass*>((*callback_ptrs)[1]);
-
-		render_pass_main->changeShader(shader_files[shader_idx % shader_files.size()]);
-		shader_idx++;
-	}
-}
-
-void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
-	if (islmbHeld) {
-		std::vector<void*>* callback_ptrs = static_cast<std::vector<void*>*>(glfwGetWindowUserPointer(window));
-		Camera* camera = static_cast<Camera*>((*callback_ptrs)[0]);
-
-		float xpos = static_cast<float>(xposIn);
-		float ypos = static_cast<float>(yposIn);
-
-		if (firstMouse) {
-			lastX = xpos;
-			lastY = ypos;
-
-			firstMouse = false;
-		}
-
-		float dx = lastX - xpos;
-		float dy = lastY - ypos;
-
-		lastX = xpos;
-		lastY = ypos;
-
-		float sensitivity = 0.007f;
-		dx *= sensitivity;
-		dy *= sensitivity;
-
-		if (abs(dx) < 0.001 && abs(dy) < 0.001) {
-			return;
-		}
-
-		vec2 mouseDelta = vec2(dx, dy);
-		vec3 target = vec3(0.0, 0.0, 0.0);
-		camera->orbit(mouseDelta, target, orbitRadius);
-	}
-}
-
-void scroll_callback(GLFWwindow* window, double xposIn, double yposIn) {
-	std::vector<void*>* callback_ptrs = static_cast<std::vector<void*>*>(glfwGetWindowUserPointer(window));
-	Camera* camera = static_cast<Camera*>((*callback_ptrs)[0]);
-	//float currFOV = camera->getFOV();
-
-	float ypos = static_cast<float>(yposIn);
-
-	float sensitivity = 0.07f;
-	ypos *= sensitivity;
-
-	orbitRadius -= ypos;
-	if (orbitRadius <= 0.1) {
-		orbitRadius = 0.1;
-	}
-
-	camera->orbit(vec2(0.0, 0.0), vec3(0.0, 0.0, 0.0), orbitRadius);
-
 }

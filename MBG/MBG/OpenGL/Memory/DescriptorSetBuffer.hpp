@@ -18,6 +18,7 @@
 #include "TextureCubeMapBuffer.hpp"
 #include "Texture2DArrayBuffer.hpp"
 #include "UniformBuffer.hpp"
+#include "ShaderStorageBuffer.hpp"
 
 namespace MBG {
 
@@ -96,6 +97,10 @@ protected:
 		for (const auto& b : uniform_binds_) {
 			command_buffer.bindBufferRange(GL_UNIFORM_BUFFER, b.slot, b.id, b.start, b.size);
 		}
+
+		for (const auto& b : ssbo_binds_) {
+			command_buffer.bindBufferRange(GL_SHADER_STORAGE_BUFFER, b.slot, b.id, b.start, b.size);
+		}
 	}
 
 	void draw(CommandBuffer& command_buffer, GLenum render_type, GLsizei draw_count) {
@@ -167,10 +172,18 @@ private:
 		uint size;
 	};
 
+	struct SSBOBinding {
+		uint slot;
+		uint id;
+		uint start;
+		uint size;
+	};
+
 	std::vector<Binding> binds_;
 	std::vector<VertexBinding> vertex_binds_;
 	std::vector<ElementBinding> element_binds_;
 	std::vector<UniformBinding> uniform_binds_;
+	std::vector<SSBOBinding> ssbo_binds_;
 	
 	bool is_transform_feedback_ = false;
 	GLuint transform_feedback_id_ = 0u;
@@ -317,6 +330,20 @@ private:
 				}
 				else {
 					uniform_binds_.emplace_back(uniform_slots++, e->uniform_id_, v->start, e->size_);
+				}
+
+				break;
+			}
+
+			case DESCRIPTOR_TYPE::SHADER_STORAGE_BUFFER: {
+				auto e = (ShaderStorageBuffer*)d.data;
+				auto v = (SSBOView*)d.view;
+
+				if (d.view == nullptr) {
+					ssbo_binds_.emplace_back(uniform_slots++, e->ssbo_id_, 0, e->size_);
+				}
+				else {
+					ssbo_binds_.emplace_back(uniform_slots++, e->ssbo_id_, v->start, e->size_);
 				}
 
 				break;

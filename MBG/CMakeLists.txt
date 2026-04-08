@@ -16,6 +16,7 @@ add_executable (MBG
     "MBG/OpenGL/Memory/Texture2DBuffer.hpp"
     "MBG/OpenGL/Memory/Texture3DBuffer.hpp"
     "MBG/OpenGL/Memory/UniformBuffer.hpp"
+    "MBG/OpenGL/Memory/ShaderStorageBuffer.hpp"
     "MBG/OpenGL/Memory/VertexBuffer.hpp"
     "MBG/OpenGL/CommandBuffer.hpp"
     "MBG/OpenGL/FrameGraph.hpp"
@@ -32,6 +33,9 @@ add_executable (MBG
     "src/texgen.cpp"
     "src/camera.hpp"
     "src/camera.cpp"
+    "src/callback_funcs.hpp"
+    "src/callback_funcs.cpp"
+    "src/common.hpp"
 )
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
