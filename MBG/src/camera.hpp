@@ -27,5 +27,5 @@ private:
     glm::vec2 rotation = glm::vec2(0.0);
     glm::mat4 perspective;
     float aspectRatio_;
-    float zoom = 90.0f;
+    float zoom = 70.0f;
 };

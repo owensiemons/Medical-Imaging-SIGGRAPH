@@ -6,7 +6,7 @@ using namespace MBG;
 int initWidth = 1600;
 int initHeight = 1200;
 
-// TODO: make PBR more PBR, transfer functions, add occlusion plane things, add temporal accumulation?, add gui
+// TODO: tranfser function opacity / include gradient?, add occlusion plane things, add temporal accumulation?, add gui, possibly redo isosurface with marching cubes?
 
 
 int main() {
@@ -57,22 +57,37 @@ int main() {
 	float sz = pz / max_phys;
 
 	// ----------------- SSBOs (transfer function) -----------------------------
-	transfer_elem transfer_data[3] = {// This should be sorted by the density value
+	rgb_transfer_elem rgb_transfer_data[3] = {// This should be sorted by the density value
 		{vec3(0.5, 0.255, 1.0), 0.1},
 		{vec3(0.8, 0.3, 0.5), 0.5},
 		{vec3(1.0, 0.65, 0.0), 0.6}
 	};
-	uint transfer_data_size = sizeof(transfer_data) / sizeof(transfer_data[0]);
+	uint rgb_transfer_data_size = sizeof(rgb_transfer_data) / sizeof(rgb_transfer_data[0]);
 
-	ShaderStorageBufferParams ssbo_params({
-		.data = &transfer_data,
-		.size = sizeof(transfer_data),
+	ShaderStorageBufferParams rgb_ssbo_params({
+		.data = &rgb_transfer_data,
+		.size = sizeof(rgb_transfer_data),
 		.buffer_usage = BUFFER_USAGE::DYNAMIC_DRAW,
 		.binding = 3,
 		});
 
-	ShaderStorageBuffer ssbo(ssbo_params);
+	ShaderStorageBuffer rgb_ssbo(rgb_ssbo_params);
 
+	a_transfer_elem a_transfer_data[3] = {
+		{0.0, 0.0},
+		{0.125, 0.5},
+		{1.0, 1.0}
+	};
+	uint a_transfer_data_size = sizeof(a_transfer_data) / sizeof(a_transfer_data[0]);
+
+	ShaderStorageBufferParams a_ssbo_params({
+		.data = &a_transfer_data,
+		.size = sizeof(a_transfer_data),
+		.buffer_usage = BUFFER_USAGE::DYNAMIC_DRAW,
+		.binding = 4,
+		});
+
+	ShaderStorageBuffer a_ssbo(a_ssbo_params);
 
 	// ----------------- Uniforms -----------------------------
 	mat4 proj_matrix = camera.getCameraProjMat();
@@ -85,7 +100,7 @@ int main() {
 	uniforms uniform_data = { vec2((float)window.getWidth(), (float)window.getHeight()),
 		frame_count, 0.0, proj_matrix, view_matrix, model_matrix,
 		inverse(proj_matrix), inverse(view_matrix),
-		vec3(sx, sy, sz), 0.0, vec3(-sx,-sy,-sz), 0.0, transfer_data_size
+		vec3(sx, sy, sz), 0.0, vec3(-sx,-sy,-sz), 0.0, rgb_transfer_data_size, a_transfer_data_size
 	};
 
 	UniformBufferParams ubo_params({
@@ -143,7 +158,8 @@ int main() {
 		{DESCRIPTOR_TYPE::VERTEX_BUFFER_IN, (void*)&vertex_buffer, nullptr},
 		{DESCRIPTOR_TYPE::UNIFORM_BUFFER, (void*)&ubo, nullptr},
 		{DESCRIPTOR_TYPE::TEXTURE_3D_BUFFER_IN, (void*)&volume_texture, nullptr},
-		{DESCRIPTOR_TYPE::SHADER_STORAGE_BUFFER, (void*)&ssbo, nullptr }
+		{DESCRIPTOR_TYPE::SHADER_STORAGE_BUFFER, (void*)&rgb_ssbo, nullptr},
+		{DESCRIPTOR_TYPE::SHADER_STORAGE_BUFFER, (void*)&a_ssbo, nullptr }
 	};
 
 	DescriptorSetBuffer descriptor_set({
@@ -187,7 +203,8 @@ int main() {
 			frame_count, 0.0,
 			proj_matrix, view_matrix, model_matrix,
 			inverse(proj_matrix), inverse(view_matrix),
-			vec3(sx, sy, sz), 0.0, vec3(-sx,-sy,-sz), 0.0, transfer_data_size
+			vec3(sx, sy, sz), 0.0, vec3(-sx,-sy,-sz), 0.0,
+			rgb_transfer_data_size, a_transfer_data_size
 		};
 
 		ubo.remapData((size_t)sizeof(window_data), &window_data, 0);

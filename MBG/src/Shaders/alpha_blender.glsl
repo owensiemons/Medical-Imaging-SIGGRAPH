@@ -1,5 +1,5 @@
 #shader VERTEX
-#version 420 core
+#version 430 core
 layout(location = 0) in vec3 position;
 
 layout(std140, binding = 0) uniform uniforms {
@@ -19,7 +19,8 @@ layout(std140, binding = 0) uniform uniforms {
     vec3 aabb_min;
     float pad1_;
 
-    uint transfer_arr_size;
+    uint rgb_transfer_arr_size;
+    uint a_transfer_arr_size;
 };
 
 void main() {
@@ -47,16 +48,26 @@ layout(std140, binding = 0) uniform uniforms {
     vec3 aabb_min;
     float pad1_;
 
-    uint transfer_arr_size;
+    uint rgb_transfer_arr_size;
+    uint a_transfer_arr_size;
 };
 
-struct transfer_elem {
+struct rgb_transfer_elem {
 	vec3 col;
 	float dens; // 16 bytes
 };
 
-layout(std430, binding = 3) buffer transfer_ssbo {
-    transfer_elem transfer_data[2];
+struct a_transfer_elem {
+	float opacity;
+	float dens;
+};
+
+layout(std430, binding = 3) buffer rgb_transfer_ssbo {
+    rgb_transfer_elem rgb_transfer_data[];
+};
+
+layout(std430, binding = 4) buffer a_transfer_ssbo {
+    a_transfer_elem a_transfer_data[];
 };
 
 uniform sampler3D tex0;
@@ -100,18 +111,13 @@ vec3 to_tex_space(vec3 pos) {
     return (pos - aabb_min) / (aabb_max - aabb_min);
 }
 
-float opacity_func(float x) {
-    return pow(x, 3);
-}
+vec3 rgb_transfer_func(float x) {
+    vec3 lerp_col = vec3(0.0, 0.0, 0.0);
 
-vec4 transfer_func(float x) { // assumes x in texture space
-
-    vec3 lerp_col;
-
-    float min_d = transfer_data[0].dens;
-    vec3 min_col = transfer_data[0].col;
-    float max_d = transfer_data[transfer_arr_size - 1].dens;
-    vec3 max_col = transfer_data[transfer_arr_size - 1].col;
+    float min_d = rgb_transfer_data[0].dens;
+    vec3 min_col = rgb_transfer_data[0].col;
+    float max_d = rgb_transfer_data[rgb_transfer_arr_size - 1].dens;
+    vec3 max_col = rgb_transfer_data[rgb_transfer_arr_size - 1].col;
 
     if (x < min_d) {
         lerp_col = min_col;
@@ -119,19 +125,58 @@ vec4 transfer_func(float x) { // assumes x in texture space
         lerp_col = max_col;
     } else {
         int i = 0;
-        while (x > transfer_data[i].dens) {
+        while (x > rgb_transfer_data[i].dens) {
             i++;
         }
-        vec3 col_1 = transfer_data[i - 1].col;
-        float d_1 = transfer_data[i - 1].dens;
+        vec3 col_1 = rgb_transfer_data[i - 1].col;
+        float d_1 = rgb_transfer_data[i - 1].dens;
 
-        vec3 col_2 = transfer_data[i].col;
-        float d_2 = transfer_data[i].dens;
+        vec3 col_2 = rgb_transfer_data[i].col;
+        float d_2 = rgb_transfer_data[i].dens;
 
         lerp_col = mix(col_1, col_2, (x - d_1) / (d_2 - d_1)); // We're interpolating in linear rgb, for better results we could first translate to a space like OKLAB
     }
 
-    return vec4(lerp_col, opacity_func(x));
+    return lerp_col;
+}
+
+float a_transfer_func(float x) {
+    if (x == 0) {
+        return 0.0;
+    }
+
+    float lerp_opacity = 0;
+
+    float min_d = a_transfer_data[0].dens;
+    float min_a = a_transfer_data[0].opacity;
+
+    float max_d = a_transfer_data[a_transfer_arr_size - 1].dens;
+    float max_a = a_transfer_data[a_transfer_arr_size - 1].opacity;
+
+    if (x < min_d) {
+        lerp_opacity = min_a;
+    } else if (x > max_d) {
+        lerp_opacity = max_a;
+    } else {
+        int i = 0;
+        while (x > a_transfer_data[i].dens) {
+            i++;
+        }
+
+        float a_1 = a_transfer_data[i - 1].opacity;
+        float d_1 = a_transfer_data[i - 1].dens;
+
+        float a_2 = a_transfer_data[i].opacity;
+        float d_2 = a_transfer_data[i].dens;
+
+        lerp_opacity = mix(a_1, a_2, (x - d_1) / (d_2 - d_1));
+    }
+
+    return lerp_opacity;
+}
+
+vec4 transfer_func(float x) { // assumes x in texture space
+    return vec4(rgb_transfer_func(x), a_transfer_func(x));
 }
 
 vec4 lookup(vec3 pos) {

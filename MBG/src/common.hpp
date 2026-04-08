@@ -23,11 +23,6 @@ extern size_t shader_idx;
 extern int initWidth;
 extern int initHeight;
 
-struct transfer_elem {
-	vec3 col;
-	float dens;// 16 bytes
-};
-
 struct uniforms {
 	vec2 screen_size;
 	uint frame_cnt;
@@ -45,5 +40,16 @@ struct uniforms {
 	vec3 aabb_min;
 	float pad1_; // 32 bytes
 
-	uint transfer_arr_size;
+	uint rgb_transfer_arr_size;
+	uint a_tranfer_arr_size;
+};
+
+struct rgb_transfer_elem {
+	vec3 col;
+	float dens;// 16 bytes
+};
+
+struct a_transfer_elem {
+	float opacity;
+	float dens;
 };

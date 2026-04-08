@@ -705,10 +705,10 @@ struct UniformBufferParams {
 };
 
 //------------------------------------------------------------
-// SSBO BUFFER OBJECT
+// SHADER STORAGE BUFFER OBJECT
 //------------------------------------------------------------
 
-struct ShaderStorageBufferParams {// Explicit binding
+struct ShaderStorageBufferParams {
 	void* data = nullptr;
 	uint size = 0;
 	BUFFER_USAGE buffer_usage = BUFFER_USAGE::STREAM_DRAW;
