@@ -135,6 +135,10 @@ vec3 transfer_func(float x) { // assumes x in texture space
     float max_d = transfer_data[rgb_transfer_arr_size - 1].dens;
     vec3 max_col = transfer_data[rgb_transfer_arr_size - 1].col;
 
+    if (x == 0.0) {// Not totally sure why this is needed, but otherwise it breaks if min_d == 0
+        return min_col;
+    }
+
     if (x < min_d) {
         lerp_col = min_col;
     } else if (x > max_d) {
@@ -190,7 +194,8 @@ void main() {
     float ray_len = length(ray);
     vec3 step_vec = step_size * ray / ray_len;
 
-    vec3 light_pos = vec3(0.0, 1.5, -1.5);
+    vec3 light_pos = vec3(-1.0, 0.3, -0.5);
+    int n_light_steps = 16;
     
     float jitter = rand_pcg(rng_seed++) * step_size;
     vec3 pos = ray_start + step_vec * (jitter / step_size);
@@ -201,8 +206,8 @@ void main() {
 
     float ka = 0.001;
     float kd = 0.9;
-    float ks = 1.0;
-    float spec_power = 8.0;
+    float ks = 0.9;
+    float spec_power = 9.0;
     vec3 mat_color = vec3(1.0); // Maybe use a transfer function for this
     vec3 spec_color = vec3(1.0);
 
@@ -228,6 +233,37 @@ void main() {
             }
 
             intensity = lookup(pos);
+
+            vec3 light_dir = normalize(light_pos - pos);
+            float ltnear, ltfar;
+
+            int isLit = 1;
+        
+            Ray shadow_ray = Ray(pos, light_dir);
+            if (intersectBox(shadow_ray, aabb, ltnear, ltfar)) {// cast shadow ray
+                if (ltnear < 0.0) { ltnear = 0.0; }
+                vec3 light_ray = light_dir * ltfar;
+                float light_ray_len = length(light_ray);
+                vec3 light_sample_pos = pos;
+                vec3 light_step_vec = light_ray / float(n_light_steps);
+                float light_step_size = light_ray_len / float(n_light_steps);
+
+                while (light_ray_len > 0) {
+                    if (light_sample_pos.z > z_bounds.x || light_sample_pos.z < z_bounds.y || light_sample_pos.y > y_bounds.x || 
+                    light_sample_pos.y < y_bounds.y || light_sample_pos.x > x_bounds.x || light_sample_pos.x < x_bounds.y) {
+                        light_sample_pos += light_step_vec;
+                        light_ray_len -= light_step_size;
+                        continue;
+                    }
+                    if (lookup(light_sample_pos) > threshold) {
+                        isLit = 0;
+                        break;
+                    }
+                    light_sample_pos += light_step_vec;
+                    light_ray_len -= light_step_size;
+                }
+            }
+
             vec3 light_norm = normalize(light_pos - pos);
             vec3 ray_norm = -rd;
             vec3 vol_norm = estimate_normal(pos, intensity);
@@ -240,6 +276,7 @@ void main() {
             mat_color = transfer_func(lookup(pos));
 
             color = (ambient + diffuse) * mat_color + specular * spec_color;
+            color *= isLit;
 
             break;
         }

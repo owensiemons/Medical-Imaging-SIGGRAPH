@@ -6,7 +6,7 @@ using namespace MBG;
 int initWidth = 1600;
 int initHeight = 1200;
 
-// TODO: make clipping planes better, tranfser function include gradient?, add occlusion plane things, add temporal accumulation?, add gui, possibly redo isosurface with marching cubes?, isosurface shade
+// TODO: tranfser function include gradient?, add temporal accumulation?, add gui, possibly redo isosurface with marching cubes?, isosurface shadows
 
 
 int main() {
@@ -58,9 +58,9 @@ int main() {
 
 	// ----------------- SSBOs (transfer function) -----------------------------
 	rgb_transfer_elem rgb_transfer_data[3] = {// This should be sorted by the density value
-		{vec3(0.5, 0.255, 1.0), 0.1},
-		{vec3(0.8, 0.3, 0.5), 0.5},
-		{vec3(1.0, 0.65, 0.0), 0.6}
+		{vec3(0.5, 0.255, 1.0), 0.0},
+		{vec3(0.8, 0.3, 0.5), 0.4},
+		{vec3(1.0, 0.65, 0.0), 0.8}
 	};
 	uint rgb_transfer_data_size = sizeof(rgb_transfer_data) / sizeof(rgb_transfer_data[0]);
 
@@ -74,9 +74,9 @@ int main() {
 	ShaderStorageBuffer rgb_ssbo(rgb_ssbo_params);
 
 	a_transfer_elem a_transfer_data[3] = {
-		{0.0, 0.3},
-		{0.1, 0.4},
-		{0.0, 0.5}
+		{0.0, 0.33},
+		{0.12, 0.4},
+		{0.0, 0.47}
 	};
 	uint a_transfer_data_size = sizeof(a_transfer_data) / sizeof(a_transfer_data[0]);
 

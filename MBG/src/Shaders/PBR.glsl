@@ -114,16 +114,16 @@ float lookup(vec3 pos) {
 
 vec3 traceScene(vec3 ro, vec3 rd, AABB aabb, uint rng_seed) {
     // absorption coeff
-    float sigma_a = 0.2;
+    float sigma_a = 0.8;
 
     // scattering coeff
-    float sigma_s = 0.7;
+    float sigma_s = 0.9;
 
     // extinction coeff
     float sigma_t = sigma_a + sigma_s;
 
     // phase function asymmetry (-1, 1)
-    float g = 0.2;
+    float g = 0.1;
 
     vec3 background_color = vec3(0.09);
 
@@ -156,6 +156,12 @@ vec3 traceScene(vec3 ro, vec3 rd, AABB aabb, uint rng_seed) {
     vec3 result = vec3(0.0);
 
     while (ray_len > 0) {
+
+        if (sample_pos.z > z_bounds.x || sample_pos.z < z_bounds.y || sample_pos.y > y_bounds.x || sample_pos.y < y_bounds.y || sample_pos.x > x_bounds.x || sample_pos.x < x_bounds.y) {
+            ray_len -= step_size;
+            sample_pos += step_vec;
+            continue;
+        }
         
         float density = lookup(sample_pos);
 
@@ -171,7 +177,7 @@ vec3 traceScene(vec3 ro, vec3 rd, AABB aabb, uint rng_seed) {
         float ltnear, ltfar;
         
         if (density > 0 && intersectBox(sample_pos, light_dir, aabb, ltnear, ltfar)) {
-            if (tnear < 0.0) { tnear = 0.0; }
+            if (ltnear < 0.0) { ltnear = 0.0; }
             vec3 light_ray = light_dir * ltfar;
             float light_ray_len = length(light_ray);
             vec3 light_sample_pos = sample_pos;
@@ -181,6 +187,13 @@ vec3 traceScene(vec3 ro, vec3 rd, AABB aabb, uint rng_seed) {
             float tau = 0;
 
             while (light_ray_len > 0) {
+                if (light_sample_pos.z > z_bounds.x || light_sample_pos.z < z_bounds.y || light_sample_pos.y > y_bounds.x || 
+                light_sample_pos.y < y_bounds.y || light_sample_pos.x > x_bounds.x || light_sample_pos.x < x_bounds.y) {
+                    light_sample_pos += light_step_vec;
+                    light_ray_len -= light_step_size;
+                    continue;
+                }
+
                 float inscatter_density = lookup(light_sample_pos);
                 tau += inscatter_density;
                 light_sample_pos += light_step_vec;

@@ -127,6 +127,10 @@ vec3 rgb_transfer_func(float x) {
     float max_d = rgb_transfer_data[rgb_transfer_arr_size - 1].dens;
     vec3 max_col = rgb_transfer_data[rgb_transfer_arr_size - 1].col;
 
+    if (x == 0.0) {// Not totally sure why this is needed, but otherwise it breaks if min_d == 0
+        return min_col;
+    }
+
     if (x < min_d) {
         lerp_col = min_col;
     } else if (x > max_d) {
@@ -160,6 +164,10 @@ float a_transfer_func(float x) {
 
     float max_d = a_transfer_data[a_transfer_arr_size - 1].dens;
     float max_a = a_transfer_data[a_transfer_arr_size - 1].opacity;
+
+    if (x == 0.0) {
+        return min_a;
+    }
 
     if (x < min_d) {
         lerp_opacity = min_a;
@@ -212,6 +220,7 @@ void main() {
         frag_color = vec4(vec3(0.09), 0.0);
         return;
     }
+
     if (tnear < 0.0) { tnear = 0.0; }
 
     uint rng_seed = uint(gl_FragCoord.x) + uint(gl_FragCoord.y) * 1000u + frame_cnt * 1000000u;

@@ -119,6 +119,10 @@ vec3 transfer_func(float x) { // assumes x in texture space
     float max_d = transfer_data[rgb_transfer_arr_size - 1].dens;
     vec3 max_col = transfer_data[rgb_transfer_arr_size - 1].col;
 
+    if (x == 0.0) {// Not totally sure why this is needed, but otherwise it breaks if min_d == 0
+        return min_col;
+    }
+
     if (x < min_d) {
         lerp_col = min_col;
     } else if (x > max_d) {
