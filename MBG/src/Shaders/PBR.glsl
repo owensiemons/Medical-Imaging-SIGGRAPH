@@ -18,6 +18,13 @@ layout(std140, binding = 0) uniform uniforms {
     float pad0_;
     vec3 aabb_min;
     float pad1_;
+
+    uint rgb_transfer_arr_size;
+    uint a_transfer_arr_size;
+
+    vec2 x_bounds;
+    vec2 y_bounds;
+    vec2 z_bounds;
 };
 
 void main() {
@@ -45,6 +52,13 @@ layout(std140, binding = 0) uniform uniforms {
     float pad0_;
     vec3 aabb_min;
     float pad1_;
+
+    uint rgb_transfer_arr_size;
+    uint a_transfer_arr_size;
+
+    vec2 x_bounds;
+    vec2 y_bounds;
+    vec2 z_bounds;
 };
 
 uniform sampler3D tex0;
@@ -142,6 +156,7 @@ vec3 traceScene(vec3 ro, vec3 rd, AABB aabb, uint rng_seed) {
     vec3 result = vec3(0.0);
 
     while (ray_len > 0) {
+        
         float density = lookup(sample_pos);
 
         // attenuate by beer-lambert

@@ -21,6 +21,10 @@ layout(std140, binding = 0) uniform uniforms {
 
     uint rgb_transfer_arr_size;
     uint a_transfer_arr_size;
+
+    vec2 x_bounds;
+    vec2 y_bounds;
+    vec2 z_bounds;
 };
 
 void main() {
@@ -50,6 +54,10 @@ layout(std140, binding = 0) uniform uniforms {
 
     uint rgb_transfer_arr_size;
     uint a_transfer_arr_size;
+
+    vec2 x_bounds;
+    vec2 y_bounds;
+    vec2 z_bounds;
 };
 
 struct rgb_transfer_elem {
@@ -220,10 +228,19 @@ void main() {
     vec3 pos = ray_start + step_vec * (jitter / step_size);
     ray_len -= jitter;
 
+
     vec4 dst = vec4(0.09, 0.09, 0.09, 0);
     vec4 src = vec4(0, 0, 0, 0);
 
+    float zcap = 0.4;
     while (ray_len > 0) {
+
+        if (pos.z > z_bounds.x || pos.z < z_bounds.y || pos.y > y_bounds.x || pos.y < y_bounds.y || pos.x > x_bounds.x || pos.x < x_bounds.y) {
+            ray_len -= step_size;
+            pos += step_vec;
+            continue;
+        }
+
         src = lookup(pos);
         src.a *= 0.5;
 

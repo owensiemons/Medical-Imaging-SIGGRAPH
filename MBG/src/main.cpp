@@ -6,7 +6,7 @@ using namespace MBG;
 int initWidth = 1600;
 int initHeight = 1200;
 
-// TODO: tranfser function opacity / include gradient?, add occlusion plane things, add temporal accumulation?, add gui, possibly redo isosurface with marching cubes?
+// TODO: make clipping planes better, tranfser function include gradient?, add occlusion plane things, add temporal accumulation?, add gui, possibly redo isosurface with marching cubes?, isosurface shade
 
 
 int main() {
@@ -74,9 +74,9 @@ int main() {
 	ShaderStorageBuffer rgb_ssbo(rgb_ssbo_params);
 
 	a_transfer_elem a_transfer_data[3] = {
-		{0.0, 0.0},
-		{0.125, 0.5},
-		{1.0, 1.0}
+		{0.0, 0.3},
+		{0.1, 0.4},
+		{0.0, 0.5}
 	};
 	uint a_transfer_data_size = sizeof(a_transfer_data) / sizeof(a_transfer_data[0]);
 
@@ -96,11 +96,12 @@ int main() {
 	glm::mat4 model_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(sx, sy, sz));// only in isosurface
 
 	uint frame_count = 0;
-
+	vec3 aabb_bounds = vec3(sx, sy, sz) - vec3(-sx, -sy, -sz);
 	uniforms uniform_data = { vec2((float)window.getWidth(), (float)window.getHeight()),
 		frame_count, 0.0, proj_matrix, view_matrix, model_matrix,
 		inverse(proj_matrix), inverse(view_matrix),
-		vec3(sx, sy, sz), 0.0, vec3(-sx,-sy,-sz), 0.0, rgb_transfer_data_size, a_transfer_data_size
+		vec3(sx, sy, sz), 0.0, vec3(-sx,-sy,-sz), 0.0, rgb_transfer_data_size, a_transfer_data_size,
+		vec2(aabb_bounds.x / 2, -aabb_bounds.x / 2), vec2(aabb_bounds.y / 2, -aabb_bounds.y / 2), vec2(aabb_bounds.z / 2, -aabb_bounds.z / 2)
 	};
 
 	UniformBufferParams ubo_params({
@@ -204,7 +205,8 @@ int main() {
 			proj_matrix, view_matrix, model_matrix,
 			inverse(proj_matrix), inverse(view_matrix),
 			vec3(sx, sy, sz), 0.0, vec3(-sx,-sy,-sz), 0.0,
-			rgb_transfer_data_size, a_transfer_data_size
+			rgb_transfer_data_size, a_transfer_data_size,
+			vec2(aabb_bounds.x / 2, -aabb_bounds.x / 2), vec2(aabb_bounds.y / 2, -aabb_bounds.y / 2), vec2(aabb_bounds.z / 2, -aabb_bounds.z / 2)
 		};
 
 		ubo.remapData((size_t)sizeof(window_data), &window_data, 0);

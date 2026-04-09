@@ -42,6 +42,10 @@ struct uniforms {
 
 	uint rgb_transfer_arr_size;
 	uint a_tranfer_arr_size;
+	vec2 x_bounds;// 16 bytes
+
+	vec2 y_bounds;
+	vec2 z_bounds;// 16 bytes
 };
 
 struct rgb_transfer_elem {

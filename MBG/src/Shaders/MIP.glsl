@@ -19,7 +19,12 @@ layout(std140, binding = 0) uniform uniforms {
     vec3 aabb_min;
     float pad1_;
 
-    uint transfer_arr_size;
+    uint rgb_transfer_arr_size;
+    uint a_transfer_arr_size;
+
+    vec2 x_bounds;
+    vec2 y_bounds;
+    vec2 z_bounds;
 };
 
 void main() {
@@ -48,7 +53,12 @@ layout(std140, binding = 0) uniform uniforms {
     vec3 aabb_min;
     float pad1_;
 
-    uint transfer_arr_size;
+    uint rgb_transfer_arr_size;
+    uint a_transfer_arr_size;
+
+    vec2 x_bounds;
+    vec2 y_bounds;
+    vec2 z_bounds;
 };
 
 struct transfer_elem {
@@ -106,8 +116,8 @@ vec3 transfer_func(float x) { // assumes x in texture space
 
     float min_d = transfer_data[0].dens;
     vec3 min_col = transfer_data[0].col;
-    float max_d = transfer_data[transfer_arr_size - 1].dens;
-    vec3 max_col = transfer_data[transfer_arr_size - 1].col;
+    float max_d = transfer_data[rgb_transfer_arr_size - 1].dens;
+    vec3 max_col = transfer_data[rgb_transfer_arr_size - 1].col;
 
     if (x < min_d) {
         lerp_col = min_col;
@@ -178,6 +188,13 @@ void main() {
     vec3 max_col = vec3(0.09, 0.09, 0.09);
 
     while (ray_len > 0) {
+
+        if (pos.z > z_bounds.x || pos.z < z_bounds.y || pos.y > y_bounds.x || pos.y < y_bounds.y || pos.x > x_bounds.x || pos.x < x_bounds.y) {
+            ray_len -= step_size;
+            pos += step_vec;
+            continue;
+        }
+
         value = texture(tex0, to_tex_space(pos)).x;
         col = lookup(pos);
 
