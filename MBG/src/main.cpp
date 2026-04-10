@@ -8,7 +8,6 @@ int initHeight = 1200;
 
 // TODO: tranfser function include gradient?, add temporal accumulation?, add gui, possibly redo isosurface with marching cubes?, isosurface shadows
 
-
 int main() {
 	// ----------------- Window -----------------------------
 	Window window(initWidth, initHeight, "raymarch");
@@ -73,7 +72,7 @@ int main() {
 
 	ShaderStorageBuffer rgb_ssbo(rgb_ssbo_params);
 
-	a_transfer_elem a_transfer_data[3] = {
+	a_transfer_elem a_transfer_data[3] = {// This should be sorted by the density value
 		{0.0, 0.33},
 		{0.12, 0.4},
 		{0.0, 0.47}

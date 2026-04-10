@@ -248,6 +248,9 @@ void main() {
                 vec3 light_step_vec = light_ray / float(n_light_steps);
                 float light_step_size = light_ray_len / float(n_light_steps);
 
+                light_sample_pos += light_step_vec;// To stop the shadow ray from detecting its origin surface as an occluding surface
+                light_ray_len -= light_step_size;
+
                 while (light_ray_len > 0) {
                     if (light_sample_pos.z > z_bounds.x || light_sample_pos.z < z_bounds.y || light_sample_pos.y > y_bounds.x || 
                     light_sample_pos.y < y_bounds.y || light_sample_pos.x > x_bounds.x || light_sample_pos.x < x_bounds.y) {
