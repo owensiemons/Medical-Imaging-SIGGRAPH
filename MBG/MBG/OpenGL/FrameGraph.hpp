@@ -71,6 +71,7 @@ public:
 	void addNode(const NodeVertexCopy& node); // copy the data to the GPU
 	void addNode(const NodeClear& node); // Clears the screen
 	void addNode(const NodeDraw& node); // Draw geometry
+	void addNodeImGui(); // Render ImGui draw data
 	void addNodeDisplay(); // Display to window
 
 	void build(); // Build the command buffer

@@ -159,6 +159,10 @@ void FrameGraph::addNode(const NodeDraw& node) {
 	node.descriptor_set->draw(command_buffer_, GLenum(node.render_states.render_type), node.draw_count);
 }
 
+void FrameGraph::addNodeImGui() {
+	command_buffer_.imguiRender();
+}
+
 void FrameGraph::addNodeDisplay() {
 	command_buffer_.display(window_->getWindow());
 }

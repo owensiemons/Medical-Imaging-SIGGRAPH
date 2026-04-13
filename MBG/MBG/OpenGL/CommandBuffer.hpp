@@ -4,6 +4,8 @@
 #include <vector>
 #include <cstring>
 #include <GLFW/glfw3.h>
+#include <imgui.h>
+#include <imgui_impl_opengl3.h>
 
 #include "Info.hpp"
 
@@ -38,10 +40,11 @@ private:
         USE_PROGRAM,
         CLEAR_COLOR,
         CLEAR,
-        
+
         // Non-native opengl commands
         DEFAULT_VIEWPORT,
         MEMORY_COPY,
+        IMGUI_RENDER,
         DISPLAY
     };
 
@@ -208,6 +211,10 @@ public:
         addCommand(COMMAND_TYPE::DEFAULT_VIEWPORT, DefaultViewport{ window });
     }
 
+    inline void imguiRender() {
+        addCommand(COMMAND_TYPE::IMGUI_RENDER, uint8_t{ 0 });
+    }
+
     inline void display(GLFWwindow* window) {
         addCommand(COMMAND_TYPE::DISPLAY, DisplayParam{ window });
     }
@@ -221,11 +228,6 @@ public:
     // Execute all commands
     void runCommands() {
         while (true) {
-            // If we reached the end then we loop back around
-            if (current_type_ >= types_.size()) {
-                current_type_ = 0;
-                current_data_ = 0;
-            }
 
             COMMAND_TYPE cmd = types_[current_type_++];
             void* ptr = data_.data() + current_data_;
@@ -415,15 +417,25 @@ public:
                 glViewport(0, 0, width, height);
                 break;
             }
+            case COMMAND_TYPE::IMGUI_RENDER: {
+                current_data_ += sizeof(uint8_t);
+                ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+                break;
+            }
             case COMMAND_TYPE::DISPLAY: {
                 auto* p = (DisplayParam*)ptr;
                 current_data_ += sizeof(*p);
                 glfwSwapBuffers(p->window);
                 glfwPollEvents();
+                current_type_ = 0;
+                current_data_ = 0;
                 return; // Return once we have drawn ONE frame (Yes, there can be multiple frames in the command queue)
             }
             }
         }
+        // No DISPLAY command — reset for next frame
+        current_type_ = 0;
+        current_data_ = 0;
     }
 
 private:

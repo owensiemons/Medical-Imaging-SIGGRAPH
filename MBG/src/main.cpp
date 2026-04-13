@@ -1,5 +1,9 @@
 #include "common.hpp"
 
+#include <imgui.h>                 // core ImGui API
+#include <imgui_impl_glfw.h>       
+#include <imgui_impl_opengl3.h>    
+
 using namespace glm;
 using namespace MBG;
 
@@ -21,6 +25,13 @@ int main() {
 	glfwSetWindowUserPointer(glfw_wind, &callback_ptrs);
 	// ^^ We need to be able to pass the camera, renderpass, etc. objects to the callback functions, we need to use WindowUserPointer for that,
 	// my solution is to use a vector of void* and static cast them into the correct objects later
+
+	// Set Up ImGui Context
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGui_ImplGlfw_InitForOpenGL(glfw_wind, true);
+	ImGui_ImplOpenGL3_Init("#version 430");
+
 
 	// ----------------- Camera -----------------------------
 	Camera camera(vec3(0.0, 0.0, -2.0), (float)window.getWidth() / (float)window.getHeight());
@@ -57,7 +68,7 @@ int main() {
 
 	// ----------------- SSBOs (transfer function) -----------------------------
 	rgb_transfer_elem rgb_transfer_data[3] = {// This should be sorted by the density value
-		{vec3(0.5, 0.255, 1.0), 0.0},
+		{vec3(1.0, 1.0, 1.0), 0.0},
 		{vec3(0.8, 0.3, 0.5), 0.4},
 		{vec3(1.0, 0.65, 0.0), 0.8}
 	};
@@ -182,11 +193,57 @@ int main() {
 		.descriptor_set = &descriptor_set,
 		});
 
-	graph.addNodeDisplay(); // display frame
+
+	graph.addNodeImGui();
+	graph.addNodeDisplay();
 
 	graph.build();
+
+	float opacityScale[3] = { a_transfer_data[0].opacity, a_transfer_data[1].opacity, a_transfer_data[2].opacity };
+
+	float sagittal_clip   = sx; // x-axis (left/right)
+	float frontal_clip    = sy; // y-axis (front/back)
+	float transverse_clip = sz; // z-axis (top/bottom)
+
 	while (!window.isClosed()) {
+		// Imgui new frame
+
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+
+		// --- ImGui widgets ---
+		ImGui::Begin("Controls");
+
+		bool opacityChanged = false;
+		opacityChanged |= ImGui::SliderFloat("Opacity 0", &opacityScale[0], 0.0f, 2.0f);
+		opacityChanged |= ImGui::SliderFloat("Opacity 1", &opacityScale[1], 0.0f, 2.0f);
+		opacityChanged |= ImGui::SliderFloat("Opacity 2", &opacityScale[2], 0.0f, 2.0f);
+		if (opacityChanged) {
+			for (int i = 0; i < a_transfer_data_size; i++) {
+				a_transfer_data[i].opacity = opacityScale[i];
+			}
+			a_ssbo.remapData(sizeof(a_transfer_data), a_transfer_data, 0);
+		}
+
+
+		ImGui::Separator();
+		ImGui::SliderFloat("Sagittal",   &sagittal_clip,   -sx, sx);
+		ImGui::SliderFloat("Frontal",    &frontal_clip,    -sy, sy);
+		ImGui::SliderFloat("Transverse", &transverse_clip, -sz, sz);
+
+		if (ImGui::Button("Next Shader")) {
+			shader_idx++;
+			render_pass_main.changeShader(shader_files[shader_idx % shader_files.size()]);
+		}
+		ImGui::SameLine();
+		ImGui::Text("%s", shader_files[shader_idx % shader_files.size()].c_str());
+		ImGui::End();
+		ImGui::Render();
+
+		// Run graph: clear + draw 3D scene (no swap)
 		graph.run();
+
 
 		int fbWidth, fbHeight;
 		glfwGetFramebufferSize(glfw_wind, &fbWidth, &fbHeight);
@@ -205,11 +262,12 @@ int main() {
 			inverse(proj_matrix), inverse(view_matrix),
 			vec3(sx, sy, sz), 0.0, vec3(-sx,-sy,-sz), 0.0,
 			rgb_transfer_data_size, a_transfer_data_size,
-			vec2(aabb_bounds.x / 2, -aabb_bounds.x / 2), vec2(aabb_bounds.y / 2, -aabb_bounds.y / 2), vec2(aabb_bounds.z / 2, -aabb_bounds.z / 2)
+			vec2(sagittal_clip, -sx), vec2(frontal_clip, -sy), vec2(transverse_clip, -sz)
 		};
 
 		ubo.remapData((size_t)sizeof(window_data), &window_data, 0);
 
 		frame_count++;
+	
 	}
 }

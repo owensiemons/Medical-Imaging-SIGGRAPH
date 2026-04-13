@@ -1,4 +1,5 @@
 #include "callback_funcs.hpp"
+#include <imgui.h>
 
 
 bool firstMouse = true;
@@ -18,6 +19,8 @@ size_t shader_idx = 0;
 
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+	if (ImGui::GetIO().WantCaptureMouse) return;
+
 	if (button == GLFW_MOUSE_BUTTON_LEFT) {
 		if (action == GLFW_PRESS) {
 			islmbHeld = true;
@@ -38,6 +41,8 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 }
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
+	if (ImGui::GetIO().WantCaptureMouse) return;
+
 	if (islmbHeld) {
 		std::vector<void*>* callback_ptrs = static_cast<std::vector<void*>*>(glfwGetWindowUserPointer(window));
 		Camera* camera = static_cast<Camera*>((*callback_ptrs)[0]);
@@ -73,6 +78,8 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
 }
 
 void scroll_callback(GLFWwindow* window, double xposIn, double yposIn) {
+	if (ImGui::GetIO().WantCaptureMouse) return;
+
 	std::vector<void*>* callback_ptrs = static_cast<std::vector<void*>*>(glfwGetWindowUserPointer(window));
 	Camera* camera = static_cast<Camera*>((*callback_ptrs)[0]);
 	//float currFOV = camera->getFOV();
