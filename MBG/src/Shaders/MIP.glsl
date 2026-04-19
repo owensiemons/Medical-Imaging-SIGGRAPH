@@ -25,6 +25,13 @@ layout(std140, binding = 0) uniform uniforms {
     vec2 x_bounds;
     vec2 y_bounds;
     vec2 z_bounds;
+    
+    vec3 bg_color;
+    float pad2_;
+    
+    float step_size;
+    float light_step_size;
+    vec2 pad3_;
 };
 
 void main() {
@@ -59,6 +66,13 @@ layout(std140, binding = 0) uniform uniforms {
     vec2 x_bounds;
     vec2 y_bounds;
     vec2 z_bounds;
+    
+    vec3 bg_color;
+    float pad2_;
+    
+    float step_size;
+    float light_step_size;
+    vec2 pad3_;
 };
 
 struct transfer_elem {
@@ -166,14 +180,13 @@ void main() {
     float tnear, tfar;
 
     if (!intersectBox(main_ray, aabb, tnear, tfar)) {
-        frag_color = vec4(vec3(0.09), 0.0);
+        frag_color = vec4(bg_color, 0.0);
         return;
     }
     if (tnear < 0.0) { tnear = 0.0; }
 
     uint rng_seed = uint(gl_FragCoord.x) + uint(gl_FragCoord.y) * 1000u + frame_cnt * 1000000u;
 
-    float step_size = 0.01;
     vec3 ray_start = main_ray.ro + main_ray.rd * tnear;
     vec3 ray_stop = main_ray.ro + main_ray.rd * tfar;
 
@@ -189,7 +202,7 @@ void main() {
     vec3 col = vec3(0.0, 0.0, 0.0);
 
     float max_intensity = 0.09;
-    vec3 max_col = vec3(0.09, 0.09, 0.09);
+    vec3 max_col = bg_color;
 
     while (ray_len > 0) {
 

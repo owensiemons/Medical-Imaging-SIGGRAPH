@@ -46,6 +46,13 @@ struct uniforms {
 
 	vec2 y_bounds;
 	vec2 z_bounds;// 16 bytes
+
+	vec3 bg_color;
+	float pad2_;// 16 bytes
+
+	float step_size;
+	float light_size;
+	vec2 pad3_;// 16 bytes
 };
 
 struct rgb_transfer_elem {

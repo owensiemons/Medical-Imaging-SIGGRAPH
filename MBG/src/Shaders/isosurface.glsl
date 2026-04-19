@@ -25,6 +25,13 @@ layout(std140, binding = 0) uniform uniforms {
     vec2 x_bounds;
     vec2 y_bounds;
     vec2 z_bounds;
+    
+    vec3 bg_color;
+    float pad2_;
+    
+    float step_size;
+    float light_step_size;
+    vec2 pad3_;
 };
 
 void main() {
@@ -59,6 +66,13 @@ layout(std140, binding = 0) uniform uniforms {
     vec2 x_bounds;
     vec2 y_bounds;
     vec2 z_bounds;
+    
+    vec3 bg_color;
+    float pad2_;
+    
+    float step_size;
+    float light_step_size;
+    vec2 pad3_;
 };
 
 struct transfer_elem {
@@ -179,14 +193,13 @@ void main() {
     float tnear, tfar;
 
     if (!intersectBox(main_ray, aabb, tnear, tfar)) {
-        frag_color = vec4(vec3(0.09), 0.0);
+        frag_color = vec4(bg_color, 0.0);
         return;
     }
     if (tnear < 0.0) { tnear = 0.0; }
 
     uint rng_seed = uint(gl_FragCoord.x) + uint(gl_FragCoord.y) * 1000u + frame_cnt * 1000000u;
 
-    float step_size = 0.01;
     vec3 ray_start = main_ray.ro + main_ray.rd * tnear;
     vec3 ray_stop = main_ray.ro + main_ray.rd * tfar;
 
@@ -195,14 +208,13 @@ void main() {
     vec3 step_vec = step_size * ray / ray_len;
 
     vec3 light_pos = vec3(-1.0, 0.3, -0.5);
-    int n_light_steps = 16;
     
     float jitter = rand_pcg(rng_seed++) * step_size;
     vec3 pos = ray_start + step_vec * (jitter / step_size);
     ray_len -= jitter;
 
     float threshold = 0.3;
-    vec3 color = vec3(0.09);
+    vec3 color = bg_color;
 
     float ka = 0.001;
     float kd = 0.9;
@@ -245,8 +257,7 @@ void main() {
                 vec3 light_ray = light_dir * ltfar;
                 float light_ray_len = length(light_ray);
                 vec3 light_sample_pos = pos;
-                vec3 light_step_vec = light_ray / float(n_light_steps);
-                float light_step_size = light_ray_len / float(n_light_steps);
+                vec3 light_step_vec = light_step_size * light_ray / light_ray_len;
 
                 light_sample_pos += light_step_vec;// To stop the shadow ray from detecting its origin surface as an occluding surface
                 light_ray_len -= light_step_size;

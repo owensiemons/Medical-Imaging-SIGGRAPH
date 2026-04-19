@@ -100,6 +100,11 @@ int main() {
 	ShaderStorageBuffer a_ssbo(a_ssbo_params);
 
 	// ----------------- Uniforms -----------------------------
+	vec3 bg_color = vec3(0.09, 0.09, 0.09);
+	float step_size = 0.03;
+	float light_step_size = 0.1;
+	// ^^ add all of this to imgui
+
 	mat4 proj_matrix = camera.getCameraProjMat();
 	mat4 view_matrix = camera.getCameraViewMat();
 
@@ -107,11 +112,13 @@ int main() {
 
 	uint frame_count = 0;
 	vec3 aabb_bounds = vec3(sx, sy, sz) - vec3(-sx, -sy, -sz);
+
 	uniforms uniform_data = { vec2((float)window.getWidth(), (float)window.getHeight()),
 		frame_count, 0.0, proj_matrix, view_matrix, model_matrix,
 		inverse(proj_matrix), inverse(view_matrix),
 		vec3(sx, sy, sz), 0.0, vec3(-sx,-sy,-sz), 0.0, rgb_transfer_data_size, a_transfer_data_size,
-		vec2(aabb_bounds.x / 2, -aabb_bounds.x / 2), vec2(aabb_bounds.y / 2, -aabb_bounds.y / 2), vec2(aabb_bounds.z / 2, -aabb_bounds.z / 2)
+		vec2(aabb_bounds.x / 2, -aabb_bounds.x / 2), vec2(aabb_bounds.y / 2, -aabb_bounds.y / 2), vec2(aabb_bounds.z / 2, -aabb_bounds.z / 2),
+		bg_color, 0.0, step_size, light_step_size, vec2(0.0, 0.0)
 	};
 
 	UniformBufferParams ubo_params({
@@ -183,7 +190,7 @@ int main() {
 	FrameGraph graph(window);
 
 	graph.addNode({
-		.color = vec4(0.09, 0.09, 0.09, 1.0),
+		.color = vec4(bg_color, 1.0),
 		});
 
 	// Render the geometry
@@ -201,6 +208,7 @@ int main() {
 
 	float opacityScale[3] = { a_transfer_data[0].opacity, a_transfer_data[1].opacity, a_transfer_data[2].opacity };
 
+	float e = 0.001;// without this epsilon adjustment, we get a near-infintely thin plane if the data goes until the end of the box
 	float sagittal_clip   = sx; // x-axis (left/right)
 	float frontal_clip    = sy; // y-axis (front/back)
 	float transverse_clip = sz; // z-axis (top/bottom)
@@ -228,9 +236,9 @@ int main() {
 
 
 		ImGui::Separator();
-		ImGui::SliderFloat("Sagittal",   &sagittal_clip,   -sx, sx);
-		ImGui::SliderFloat("Frontal",    &frontal_clip,    -sy, sy);
-		ImGui::SliderFloat("Transverse", &transverse_clip, -sz, sz);
+		ImGui::SliderFloat("Sagittal",   &sagittal_clip,   -sx - e, sx + e);
+		ImGui::SliderFloat("Frontal",    &frontal_clip,    -sy - e, sy + e);
+		ImGui::SliderFloat("Transverse", &transverse_clip, -sz - e, sz + e);
 
 		if (ImGui::Button("Next Shader")) {
 			shader_idx++;
@@ -262,7 +270,8 @@ int main() {
 			inverse(proj_matrix), inverse(view_matrix),
 			vec3(sx, sy, sz), 0.0, vec3(-sx,-sy,-sz), 0.0,
 			rgb_transfer_data_size, a_transfer_data_size,
-			vec2(sagittal_clip, -sx), vec2(frontal_clip, -sy), vec2(transverse_clip, -sz)
+			vec2(sagittal_clip, -sx), vec2(frontal_clip, -sy), vec2(transverse_clip, -sz),
+			bg_color, 0.0, step_size, light_step_size, vec2(0.0, 0.0)
 		};
 
 		ubo.remapData((size_t)sizeof(window_data), &window_data, 0);

@@ -25,6 +25,13 @@ layout(std140, binding = 0) uniform uniforms {
     vec2 x_bounds;
     vec2 y_bounds;
     vec2 z_bounds;
+
+    vec3 bg_color;
+    float pad2_;
+
+    float step_size;
+    float light_step_size;
+    vec2 pad3_;
 };
 
 void main() {
@@ -58,6 +65,13 @@ layout(std140, binding = 0) uniform uniforms {
     vec2 x_bounds;
     vec2 y_bounds;
     vec2 z_bounds;
+    
+    vec3 bg_color;
+    float pad2_;
+    
+    float step_size;
+    float light_step_size;
+    vec2 pad3_;
 };
 
 struct rgb_transfer_elem {
@@ -217,7 +231,7 @@ void main() {
     float tnear, tfar;
 
     if (!intersectBox(main_ray, aabb, tnear, tfar)) {
-        frag_color = vec4(vec3(0.09), 0.0);
+        frag_color = vec4(bg_color, 0.0);
         return;
     }
 
@@ -225,7 +239,6 @@ void main() {
 
     uint rng_seed = uint(gl_FragCoord.x) + uint(gl_FragCoord.y) * 1000u + frame_cnt * 1000000u;
 
-    float step_size = 0.01;
     vec3 ray_start = main_ray.ro + main_ray.rd * tnear;
     vec3 ray_stop = main_ray.ro + main_ray.rd * tfar;
 
@@ -238,7 +251,7 @@ void main() {
     ray_len -= jitter;
 
 
-    vec4 dst = vec4(0.09, 0.09, 0.09, 0);
+    vec4 dst = vec4(bg_color, 0);
     vec4 src = vec4(0, 0, 0, 0);
 
     float zcap = 0.4;
@@ -251,7 +264,8 @@ void main() {
         }
 
         src = lookup(pos);
-        src.a *= 0.5;
+        src.a *= 50 * step_size;
+        // we multiply by scaled step size to ensure color isnt dependent on it
 
         src.xyz *= src.a;
 

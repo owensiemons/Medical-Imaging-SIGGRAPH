@@ -25,6 +25,13 @@ layout(std140, binding = 0) uniform uniforms {
     vec2 x_bounds;
     vec2 y_bounds;
     vec2 z_bounds;
+    
+    vec3 bg_color;
+    float pad2_;
+    
+    float step_size;
+    float light_step_size;
+    vec2 pad3_;
 };
 
 void main() {
@@ -59,6 +66,13 @@ layout(std140, binding = 0) uniform uniforms {
     vec2 x_bounds;
     vec2 y_bounds;
     vec2 z_bounds;
+    
+    vec3 bg_color;
+    float pad2_;
+    
+    float step_size;
+    float light_step_size;
+    vec2 pad3_;
 };
 
 uniform sampler3D tex0;
@@ -125,18 +139,15 @@ vec3 traceScene(vec3 ro, vec3 rd, AABB aabb, uint rng_seed) {
     // phase function asymmetry (-1, 1)
     float g = 0.1;
 
-    vec3 background_color = vec3(0.09);
 
     vec3 light_color = vec3(50);
     vec3 light_pos = vec3(0.0, 2.0, 2.0);
 
-    int n_steps = 48;
-    int n_light_steps = 12;
 
     float tnear, tfar;
 
     if (!intersectBox(ro, rd, aabb, tnear, tfar)) {
-        return background_color;
+        return bg_color;
     }
 
     if (tnear < 0.0) { tnear = 0.0; } //NOTE: all the marching is done in world space, lookup() changes to tex space
@@ -145,8 +156,7 @@ vec3 traceScene(vec3 ro, vec3 rd, AABB aabb, uint rng_seed) {
 
     vec3 ray = ray_stop - ray_start;
     float ray_len = length(ray);
-    vec3 step_vec = ray / float(n_steps);
-    float step_size = ray_len / float(n_steps);
+    vec3 step_vec = step_size * ray / ray_len;
 
     float jitter = rand_pcg(rng_seed++) * step_size;
     vec3 sample_pos = ray_start + step_vec * (jitter / step_size);
@@ -181,8 +191,7 @@ vec3 traceScene(vec3 ro, vec3 rd, AABB aabb, uint rng_seed) {
             vec3 light_ray = light_dir * ltfar;
             float light_ray_len = length(light_ray);
             vec3 light_sample_pos = sample_pos;
-            vec3 light_step_vec = light_ray / float(n_light_steps);
-            float light_step_size = light_ray_len / float(n_light_steps);
+            vec3 light_step_vec = light_step_size * light_ray / light_ray_len;
              
             float tau = 0;
 
@@ -222,7 +231,7 @@ vec3 traceScene(vec3 ro, vec3 rd, AABB aabb, uint rng_seed) {
         sample_pos += step_vec;
     }
 
-    return background_color * transparency + result;
+    return bg_color * transparency + result;
 }
 
 void main() {
