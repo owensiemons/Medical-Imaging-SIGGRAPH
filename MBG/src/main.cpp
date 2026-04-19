@@ -1,8 +1,8 @@
 #include "common.hpp"
 
-#include <imgui.h>                 // core ImGui API
-#include <imgui_impl_glfw.h>       
-#include <imgui_impl_opengl3.h>    
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 
 using namespace glm;
 using namespace MBG;
@@ -86,7 +86,7 @@ int main() {
 	a_transfer_elem a_transfer_data[3] = {// This should be sorted by the density value
 		{0.0, 0.33},
 		{0.12, 0.4},
-		{0.0, 0.47}
+		{0.0, 0.5}
 	};
 	uint a_transfer_data_size = sizeof(a_transfer_data) / sizeof(a_transfer_data[0]);
 
@@ -207,14 +207,18 @@ int main() {
 	graph.build();
 
 	float opacityScale[3] = { a_transfer_data[0].opacity, a_transfer_data[1].opacity, a_transfer_data[2].opacity };
+	float densityScale[3] = { a_transfer_data[0].dens, a_transfer_data[1].dens, a_transfer_data[2].dens };
 
-	float e = 0.001;// without this epsilon adjustment, we get a near-infintely thin plane if the data goes until the end of the box
-	float sagittal_clip   = sx; // x-axis (left/right)
-	float frontal_clip    = sy; // y-axis (front/back)
-	float transverse_clip = sz; // z-axis (top/bottom)
+	// ----------------- Clip Values -----------------------------
+	float sagittal_clip   = sx;
+	float frontal_clip    = sy;
+	float transverse_clip = sz;
+
 
 	while (!window.isClosed()) {
-		// Imgui new frame
+
+		int fbWidth, fbHeight;
+		glfwGetFramebufferSize(glfw_wind, &fbWidth, &fbHeight);
 
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
@@ -224,37 +228,59 @@ int main() {
 		ImGui::Begin("Controls");
 
 		bool opacityChanged = false;
-		opacityChanged |= ImGui::SliderFloat("Opacity 0", &opacityScale[0], 0.0f, 2.0f);
-		opacityChanged |= ImGui::SliderFloat("Opacity 1", &opacityScale[1], 0.0f, 2.0f);
-		opacityChanged |= ImGui::SliderFloat("Opacity 2", &opacityScale[2], 0.0f, 2.0f);
+		bool densityChanged = false;
+
+		if (shader_idx % shader_files.size() == 0) {
+			opacityChanged |= ImGui::SliderFloat("Opacity 0", &opacityScale[0], 0.0f, 2.0f);
+			opacityChanged |= ImGui::SliderFloat("Opacity 1", &opacityScale[1], 0.0f, 2.0f);
+			opacityChanged |= ImGui::SliderFloat("Opacity 2", &opacityScale[2], 0.0f, 2.0f);
+
+			ImGui::Separator();
+
+			densityChanged |= ImGui::SliderFloat("Density 0", &densityScale[0], 0.0f, 2.0f);
+			densityChanged |= ImGui::SliderFloat("Density 1", &densityScale[1], 0.0f, 2.0f);
+			densityChanged |= ImGui::SliderFloat("Density 2", &densityScale[2], 0.0f, 2.0f);
+		}
+
 		if (opacityChanged) {
+
 			for (int i = 0; i < a_transfer_data_size; i++) {
 				a_transfer_data[i].opacity = opacityScale[i];
 			}
+
+			//a_transfer_data[0].opacity = opacityScale[0];
 			a_ssbo.remapData(sizeof(a_transfer_data), a_transfer_data, 0);
 		}
 
+		if (densityChanged) {
 
+			for (int i = 0; i < a_transfer_data_size; i++) {
+				a_transfer_data[i].dens = densityScale[i];
+			}
+			//a_transfer_data[0].opacity = opacityScale[0];
+			a_ssbo.remapData(sizeof(a_transfer_data), a_transfer_data, 0);
+		}
+
+	
+		// Sliders
 		ImGui::Separator();
-		ImGui::SliderFloat("Sagittal",   &sagittal_clip,   -sx - e, sx + e);
-		ImGui::SliderFloat("Frontal",    &frontal_clip,    -sy - e, sy + e);
-		ImGui::SliderFloat("Transverse", &transverse_clip, -sz - e, sz + e);
+		ImGui::SliderFloat("Sagittal",   &sagittal_clip,   -sx, sx);
+		ImGui::SliderFloat("Frontal",    &frontal_clip,    -sy, sy);
+		ImGui::SliderFloat("Transverse", &transverse_clip, -sz, sz);
 
 		if (ImGui::Button("Next Shader")) {
 			shader_idx++;
 			render_pass_main.changeShader(shader_files[shader_idx % shader_files.size()]);
 		}
+
 		ImGui::SameLine();
+		ImGui::Separator();
 		ImGui::Text("%s", shader_files[shader_idx % shader_files.size()].c_str());
 		ImGui::End();
 		ImGui::Render();
 
-		// Run graph: clear + draw 3D scene (no swap)
 		graph.run();
 
-
-		int fbWidth, fbHeight;
-		glfwGetFramebufferSize(glfw_wind, &fbWidth, &fbHeight);
 
 		if (fbHeight > 0) {
 			camera.updateAspectRatio((float)fbWidth / (float)fbHeight);
