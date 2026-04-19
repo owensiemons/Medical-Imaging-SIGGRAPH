@@ -250,23 +250,22 @@ int main() {
 			for (int i = 0; i < a_transfer_data_size; i++) {
 				a_transfer_data[i].dens = densityScale[i];
 			}
-
 			//a_transfer_data[0].opacity = opacityScale[0];
 			a_ssbo.remapData(sizeof(a_transfer_data), a_transfer_data, 0);
 		}
 
-
 	
 		// Sliders
 		ImGui::Separator();
-		ImGui::SliderFloat("Sagittal",   &sagittal_clip,   0, sx);
-		ImGui::SliderFloat("Frontal",    &frontal_clip,    0, sy);
-		ImGui::SliderFloat("Transverse", &transverse_clip, 0, sz);
+		ImGui::SliderFloat("Sagittal",   &sagittal_clip,   -sx, sx);
+		ImGui::SliderFloat("Frontal",    &frontal_clip,    -sy, sy);
+		ImGui::SliderFloat("Transverse", &transverse_clip, -sz, sz);
 
 		if (ImGui::Button("Next Shader")) {
 			shader_idx++;
 			render_pass_main.changeShader(shader_files[shader_idx % shader_files.size()]);
 		}
+
 		ImGui::SameLine();
 		ImGui::Separator();
 		ImGui::Text("%s", shader_files[shader_idx % shader_files.size()].c_str());
