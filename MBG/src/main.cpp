@@ -209,6 +209,8 @@ int main() {
 	float opacityScale[3] = { a_transfer_data[0].opacity, a_transfer_data[1].opacity, a_transfer_data[2].opacity };
 	float densityScale[3] = { a_transfer_data[0].dens, a_transfer_data[1].dens, a_transfer_data[2].dens };
 
+	float e = 0.001;// Fixes an near infinitely thin plane if data is at bounds of bounding box
+
 	// ----------------- Clip Values -----------------------------
 	float sagittal_clip   = sx;
 	float frontal_clip    = sy;
@@ -264,9 +266,9 @@ int main() {
 	
 		// Sliders
 		ImGui::Separator();
-		ImGui::SliderFloat("Sagittal",   &sagittal_clip,   -sx, sx);
-		ImGui::SliderFloat("Frontal",    &frontal_clip,    -sy, sy);
-		ImGui::SliderFloat("Transverse", &transverse_clip, -sz, sz);
+		ImGui::SliderFloat("Sagittal",   &sagittal_clip,   -sx - e, sx + e);
+		ImGui::SliderFloat("Frontal",    &frontal_clip,    -sy - e, sy + e);
+		ImGui::SliderFloat("Transverse", &transverse_clip, -sz - e, sz + e);
 
 		if (ImGui::Button("Next Shader")) {
 			shader_idx++;
