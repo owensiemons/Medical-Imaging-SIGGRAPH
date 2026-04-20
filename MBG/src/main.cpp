@@ -1,9 +1,5 @@
 #include "common.hpp"
 
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_opengl3.h>
-
 using namespace glm;
 using namespace MBG;
 
@@ -233,34 +229,30 @@ int main() {
 		bool densityChanged = false;
 
 		if (shader_idx % shader_files.size() == 0) {
-			opacityChanged |= ImGui::SliderFloat("Opacity 0", &opacityScale[0], 0.0f, 2.0f);
-			opacityChanged |= ImGui::SliderFloat("Opacity 1", &opacityScale[1], 0.0f, 2.0f);
-			opacityChanged |= ImGui::SliderFloat("Opacity 2", &opacityScale[2], 0.0f, 2.0f);
+			opacityChanged |= ImGui::SliderFloat("Opacity 0", &a_transfer_data[0].opacity, 0.0f, 2.0f);
+			opacityChanged |= ImGui::SliderFloat("Opacity 1", &a_transfer_data[1].opacity, 0.0f, 2.0f);
+			opacityChanged |= ImGui::SliderFloat("Opacity 2", &a_transfer_data[2].opacity, 0.0f, 2.0f);
 
 			ImGui::Separator();
 
-			densityChanged |= ImGui::SliderFloat("Density 0", &densityScale[0], 0.0f, 2.0f);
-			densityChanged |= ImGui::SliderFloat("Density 1", &densityScale[1], 0.0f, 2.0f);
-			densityChanged |= ImGui::SliderFloat("Density 2", &densityScale[2], 0.0f, 2.0f);
+			densityChanged |= ImGui::SliderFloat("Density 0", &a_transfer_data[0].dens, 0.0f, 2.0f);
+			densityChanged |= ImGui::SliderFloat("Density 1", &a_transfer_data[1].dens, 0.0f, 2.0f);
+			densityChanged |= ImGui::SliderFloat("Density 2", &a_transfer_data[2].dens, 0.0f, 2.0f);
 		}
 
-		if (opacityChanged) {
+		if (opacityChanged || densityChanged) { 
 
-			for (int i = 0; i < a_transfer_data_size; i++) {
-				a_transfer_data[i].opacity = opacityScale[i];
+			/*std::sort(std::begin(a_transfer_data), std::end(a_transfer_data),
+				[](a_transfer_elem a, a_transfer_elem b) {
+					return a.dens < b.dens;
+				}
+			);*/
+			for (int i = 0; i < a_transfer_data_size - 1; i++) {
+				if (a_transfer_data[i].dens > a_transfer_data[i + 1].dens) {
+					a_transfer_data[i].dens = a_transfer_data[i + 1].dens;
+				}
 			}
-
-			//a_transfer_data[0].opacity = opacityScale[0];
-			a_ssbo.remapData(sizeof(a_transfer_data), a_transfer_data, 0);
-		}
-
-		if (densityChanged) {
-
-			for (int i = 0; i < a_transfer_data_size; i++) {
-				a_transfer_data[i].dens = densityScale[i];
-			}
-			//a_transfer_data[0].opacity = opacityScale[0];
-			a_ssbo.remapData(sizeof(a_transfer_data), a_transfer_data, 0);
+			a_ssbo.remapData(sizeof(a_transfer_data), a_transfer_data, 0); 
 		}
 
 	

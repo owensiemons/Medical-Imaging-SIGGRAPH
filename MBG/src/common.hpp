@@ -14,6 +14,12 @@
 #include <vector>
 #include <filesystem>
 #include <glm/ext/matrix_transform.hpp>
+#include <algorithm>
+#include <iterator>
+
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 
 using namespace glm;
 using namespace MBG;
