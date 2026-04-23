@@ -2,7 +2,7 @@
 #version 420 core
 layout(location = 0) in vec3 position;
 
-layout(std140, binding = 0) uniform uniforms {
+layout(std140, binding = 0) uniform main_uniforms {
     vec2 screen_size;
     uint frame_cnt;
     float pad_;
@@ -43,7 +43,7 @@ void main() {
 #shader FRAGMENT
 #version 430 core
 
-layout(std140, binding = 0) uniform uniforms {
+layout(std140, binding = 0) uniform main_uniforms {
     vec2 screen_size;
     uint frame_cnt;
     float pad_;
@@ -75,13 +75,13 @@ layout(std140, binding = 0) uniform uniforms {
     vec2 pad3_;
 };
 
-struct transfer_elem {
+struct rgb_transfer_elem {
 	vec3 col;
 	float dens; // 16 bytes
 };
 
-layout(std430, binding = 3) buffer transfer_ssbo {
-    transfer_elem transfer_data[2];
+layout(std430, binding = 0) buffer rgb_transfer_ssbo {
+    rgb_transfer_elem transfer_data[2];
 };
 
 uniform sampler3D tex0;

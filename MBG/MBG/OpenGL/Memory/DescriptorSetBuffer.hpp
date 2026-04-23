@@ -194,6 +194,7 @@ private:
 	void addInDescriptors(const Descriptor* descriptor_set, const uint count) {
 		uint texture_slots = 0;
 		uint uniform_slots = 0;
+		uint ssbo_slots = 0;
 
 		for (unsigned i = 0; i < count; i++) {
 			const Descriptor& d = descriptor_set[i];
@@ -340,10 +341,10 @@ private:
 				auto v = (SSBOView*)d.view;
 
 				if (d.view == nullptr) {
-					ssbo_binds_.emplace_back(uniform_slots++, e->ssbo_id_, 0, e->size_);
+					ssbo_binds_.emplace_back(ssbo_slots++, e->ssbo_id_, 0, e->size_);
 				}
 				else {
-					ssbo_binds_.emplace_back(uniform_slots++, e->ssbo_id_, v->start, e->size_);
+					ssbo_binds_.emplace_back(ssbo_slots++, e->ssbo_id_, v->start, e->size_);
 				}
 
 				break;

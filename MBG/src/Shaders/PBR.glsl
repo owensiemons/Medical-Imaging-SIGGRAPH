@@ -2,7 +2,7 @@
 #version 420 core
 layout(location = 0) in vec3 position;
 
-layout(std140, binding = 0) uniform uniforms {
+layout(std140, binding = 0) uniform main_uniforms {
     vec2 screen_size;
     uint frame_cnt;
     float pad_;
@@ -43,7 +43,7 @@ void main() {
 #shader FRAGMENT
 #version 420 core
 
-layout(std140, binding = 0) uniform uniforms {
+layout(std140, binding = 0) uniform main_uniforms {
     vec2 screen_size;
     uint frame_cnt;
     float pad_;

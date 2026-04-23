@@ -2,7 +2,7 @@
 #version 420 core
 layout(location = 0) in vec3 position;
 
-layout(std140, binding = 0) uniform uniforms {
+layout(std140, binding = 0) uniform main_uniforms {
     vec2 screen_size;
     uint frame_cnt;
     float pad_;
@@ -32,6 +32,10 @@ layout(std140, binding = 0) uniform uniforms {
     float step_size;
     float light_step_size;
     vec2 pad3_;
+};
+
+layout(std140, binding = 1) uniform phong_uniforms {
+    vec4 ka_kd_ks_sp;
 };
 
 void main() {
@@ -43,7 +47,7 @@ void main() {
 #shader FRAGMENT
 #version 430 core
 
-layout(std140, binding = 0) uniform uniforms {
+layout(std140, binding = 0) uniform main_uniforms {
     vec2 screen_size;
     uint frame_cnt;
     float pad_;
@@ -75,13 +79,17 @@ layout(std140, binding = 0) uniform uniforms {
     vec2 pad3_;
 };
 
-struct transfer_elem {
+layout(std140, binding = 1) uniform phong_uniforms {
+    vec4 ka_kd_ks_sp;
+};
+
+struct rgb_transfer_elem {
 	vec3 col;
 	float dens; // 16 bytes
 };
 
-layout(std430, binding = 3) buffer transfer_ssbo {
-    transfer_elem transfer_data[2];
+layout(std430, binding = 0) buffer rgb_transfer_ssbo {
+    rgb_transfer_elem transfer_data[2];
 };
 
 
@@ -216,11 +224,11 @@ void main() {
     float threshold = 0.3;
     vec3 color = bg_color;
 
-    float ka = 0.001;
-    float kd = 0.9;
-    float ks = 0.9;
-    float spec_power = 9.0;
-    vec3 mat_color = vec3(1.0); // Maybe use a transfer function for this
+    float ka = ka_kd_ks_sp.x;
+    float kd = ka_kd_ks_sp.y;
+    float ks = ka_kd_ks_sp.z;
+    float spec_power = ka_kd_ks_sp.w;
+    vec3 mat_color = vec3(1.0);
     vec3 spec_color = vec3(1.0);
 
     while (ray_len > 0) {

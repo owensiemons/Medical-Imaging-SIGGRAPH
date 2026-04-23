@@ -99,6 +99,10 @@ int main() {
 	vec3 bg_color = vec3(0.09, 0.09, 0.09);
 	float step_size = 0.03;
 	float light_step_size = 0.1;
+	float spec_power = 9.0;
+	float ka = 0.001;
+	float kd = 0.9;
+	float ks = 0.9;
 	// ^^ add all of this to imgui
 
 	mat4 proj_matrix = camera.getCameraProjMat();
@@ -109,7 +113,7 @@ int main() {
 	uint frame_count = 0;
 	vec3 aabb_bounds = vec3(sx, sy, sz) - vec3(-sx, -sy, -sz);
 
-	uniforms uniform_data = { vec2((float)window.getWidth(), (float)window.getHeight()),
+	main_uniforms main_uniform_data = { vec2((float)window.getWidth(), (float)window.getHeight()),
 		frame_count, 0.0, proj_matrix, view_matrix, model_matrix,
 		inverse(proj_matrix), inverse(view_matrix),
 		vec3(sx, sy, sz), 0.0, vec3(-sx,-sy,-sz), 0.0, rgb_transfer_data_size, a_transfer_data_size,
@@ -117,13 +121,25 @@ int main() {
 		bg_color, 0.0, step_size, light_step_size, vec2(0.0, 0.0)
 	};
 
-	UniformBufferParams ubo_params({
-		.data = &uniform_data,
-		.size = sizeof(uniform_data),
+	phong_uniforms phong_uniform_data{
+		vec4(ka, kd, ks, spec_power)
+	};
+
+	UniformBufferParams main_ubo_params({
+		.data = &main_uniform_data,
+		.size = sizeof(main_uniform_data),
 		.buffer_usage = BUFFER_USAGE::STATIC_DRAW,
 		});
 
-	UniformBuffer ubo(ubo_params);
+	UniformBufferParams phong_ubo_params({
+		.data = &phong_uniform_data,
+		.size = sizeof(phong_uniform_data),
+		.buffer_usage = BUFFER_USAGE::STATIC_DRAW,
+		});
+
+	UniformBuffer main_ubo(main_ubo_params);
+
+	UniformBuffer phong_ubo(phong_ubo_params);
 
 	// ----------------- Vertex Buffer -----------------------------
 	struct Vertex {
@@ -170,7 +186,8 @@ int main() {
 	// ----------------- Descriptor Set -----------------------------
 	Descriptor descriptors[] = {
 		{DESCRIPTOR_TYPE::VERTEX_BUFFER_IN, (void*)&vertex_buffer, nullptr},
-		{DESCRIPTOR_TYPE::UNIFORM_BUFFER, (void*)&ubo, nullptr},
+		{DESCRIPTOR_TYPE::UNIFORM_BUFFER, (void*)&main_ubo, nullptr},
+		{DESCRIPTOR_TYPE::UNIFORM_BUFFER, (void*)&phong_ubo, nullptr},
 		{DESCRIPTOR_TYPE::TEXTURE_3D_BUFFER_IN, (void*)&volume_texture, nullptr},
 		{DESCRIPTOR_TYPE::SHADER_STORAGE_BUFFER, (void*)&rgb_ssbo, nullptr},
 		{DESCRIPTOR_TYPE::SHADER_STORAGE_BUFFER, (void*)&a_ssbo, nullptr }
@@ -283,7 +300,7 @@ int main() {
 		proj_matrix = camera.getCameraProjMat();
 		view_matrix = camera.getCameraViewMat();
 
-		uniforms window_data = {
+		main_uniforms update_main_ubo = {
 			vec2((float)fbWidth, (float)fbHeight),
 			frame_count, 0.0,
 			proj_matrix, view_matrix, model_matrix,
@@ -294,7 +311,13 @@ int main() {
 			bg_color, 0.0, step_size, light_step_size, vec2(0.0, 0.0)
 		};
 
-		ubo.remapData((size_t)sizeof(window_data), &window_data, 0);
+		phong_uniforms update_phong_ubo = {
+			vec4(ka, kd, ks, spec_power)
+		};
+
+		main_ubo.remapData((size_t)sizeof(update_main_ubo), &update_main_ubo, 0);
+
+		//phong_ubo.remapData((size_t)sizeof(update_phong_ubo), &update_phong_ubo, 0);
 
 		frame_count++;
 	

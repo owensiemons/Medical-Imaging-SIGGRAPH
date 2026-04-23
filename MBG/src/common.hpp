@@ -29,7 +29,7 @@ extern size_t shader_idx;
 extern int initWidth;
 extern int initHeight;
 
-struct uniforms {
+struct main_uniforms {
 	vec2 screen_size;
 	uint frame_cnt;
 	float pad_;// 16 bytes
@@ -59,6 +59,11 @@ struct uniforms {
 	float step_size;
 	float light_size;
 	vec2 pad3_;// 16 bytes
+};
+
+struct phong_uniforms {
+	vec4 ka_kd_ks_sp; // ka, kd, ks, specular power, 16 bytes
+
 };
 
 struct rgb_transfer_elem {
