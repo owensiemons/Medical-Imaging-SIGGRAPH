@@ -31,11 +31,13 @@ layout(std140, binding = 0) uniform main_uniforms {
     
     float step_size;
     float light_step_size;
-    vec2 pad3_;
+    float light_t;
+    float pad3_;
 };
 
 layout(std140, binding = 1) uniform phong_uniforms {
     vec4 ka_kd_ks_sp;
+    vec4 t_s_a_a;
 };
 
 void main() {
@@ -76,11 +78,13 @@ layout(std140, binding = 0) uniform main_uniforms {
     
     float step_size;
     float light_step_size;
-    vec2 pad3_;
+    float light_t;
+    float pad3_;
 };
 
 layout(std140, binding = 1) uniform phong_uniforms {
     vec4 ka_kd_ks_sp;
+    vec4 t_s_a_a;
 };
 
 struct rgb_transfer_elem {
@@ -215,13 +219,12 @@ void main() {
     float ray_len = length(ray);
     vec3 step_vec = step_size * ray / ray_len;
 
-    vec3 light_pos = vec3(-1.0, 0.3, -0.5);
+    vec3 light_pos = vec3(sin(light_t), 0.3, cos(light_t));
     
     float jitter = rand_pcg(rng_seed++) * step_size;
     vec3 pos = ray_start + step_vec * (jitter / step_size);
     ray_len -= jitter;
 
-    float threshold = 0.3;
     vec3 color = bg_color;
 
     float ka = ka_kd_ks_sp.x;
@@ -230,6 +233,7 @@ void main() {
     float spec_power = ka_kd_ks_sp.w;
     vec3 mat_color = vec3(1.0);
     vec3 spec_color = vec3(1.0);
+    float threshold = t_s_a_a.x;
 
     while (ray_len > 0) {
 
@@ -261,7 +265,6 @@ void main() {
         
             Ray shadow_ray = Ray(pos, light_dir);
             if (intersectBox(shadow_ray, aabb, ltnear, ltfar)) {// cast shadow ray
-                if (ltnear < 0.0) { ltnear = 0.0; }
                 vec3 light_ray = light_dir * ltfar;
                 float light_ray_len = length(light_ray);
                 vec3 light_sample_pos = pos;

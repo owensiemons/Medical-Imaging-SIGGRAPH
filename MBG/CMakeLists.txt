@@ -50,6 +50,9 @@ endif()
 find_package(imgui REQUIRED)
 target_link_libraries(MBG PRIVATE imgui::imgui)
 
+find_package(implot REQUIRED)
+target_link_libraries(MBG PRIVATE implot::implot)
+
 find_package (glfw3 REQUIRED)
 target_link_libraries (MBG PRIVATE glfw)
 
@@ -65,15 +68,15 @@ target_include_directories(MBG PRIVATE ${Stb_INCLUDE_DIR})
 find_package(TIFF REQUIRED)
 target_link_libraries(MBG PRIVATE TIFF::TIFF)
 
-# Link Catch2
-target_link_libraries(MBG PRIVATE Catch2::Catch2WithMain)
 
-# Enable CTest (so you can use `ctest`)
-include(CTest)
-include(Catch)
-catch_discover_tests(MBG)
 
 add_custom_target(copy_folders ALL
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_LIST_DIR}/copy_folders.cmake
 )
 add_dependencies(MBG copy_folders)
+
+add_subdirectory(third_party/imgui_gradient)
+get_target_property(IMGUI_INCLUDE imgui::imgui INTERFACE_INCLUDE_DIRECTORIES)
+target_include_directories(imgui_gradient SYSTEM PRIVATE ${IMGUI_INCLUDE})
+target_link_libraries(MBG PRIVATE imgui_gradient::imgui_gradient)
+target_compile_definitions(imgui_gradient PUBLIC IMGUI_DEFINE_MATH_OPERATORS)

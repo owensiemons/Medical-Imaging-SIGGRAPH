@@ -429,6 +429,8 @@ public:
                 glfwPollEvents();
                 current_type_ = 0;
                 current_data_ = 0;
+                types_.clear();
+                data_.clear();
                 return; // Return once we have drawn ONE frame (Yes, there can be multiple frames in the command queue)
             }
             }

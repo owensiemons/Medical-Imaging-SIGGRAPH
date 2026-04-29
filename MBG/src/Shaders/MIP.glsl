@@ -31,7 +31,8 @@ layout(std140, binding = 0) uniform main_uniforms {
     
     float step_size;
     float light_step_size;
-    vec2 pad3_;
+    float light_t;
+    float pad3_;
 };
 
 void main() {
@@ -72,7 +73,8 @@ layout(std140, binding = 0) uniform main_uniforms {
     
     float step_size;
     float light_step_size;
-    vec2 pad3_;
+    float light_t;
+    float pad3_;
 };
 
 struct rgb_transfer_elem {

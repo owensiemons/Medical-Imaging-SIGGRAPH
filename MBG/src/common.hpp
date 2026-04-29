@@ -20,6 +20,10 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+#include <implot.h>
+
+#include <imgui_gradient/imgui_gradient.hpp>
+#include "../third_party/imgui_gradient/src/MarkId.hpp"
 
 using namespace glm;
 using namespace MBG;
@@ -58,12 +62,13 @@ struct main_uniforms {
 
 	float step_size;
 	float light_size;
-	vec2 pad3_;// 16 bytes
+	float light_pos;
+	float pad3_;// 16 bytes
 };
 
-struct phong_uniforms {
+struct special_uniforms {
 	vec4 ka_kd_ks_sp; // ka, kd, ks, specular power, 16 bytes
-
+	vec4 t_s_a_a; // threshold, scatter, absorption, asymmetry
 };
 
 struct rgb_transfer_elem {

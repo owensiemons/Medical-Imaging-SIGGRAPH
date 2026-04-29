@@ -1,0 +1,6 @@
+# ninja log v6
+24	309	7991277888126382	CMakeFiles/implot.dir/implot_demo.cpp.obj	53b69e89e639c706
+15	369	7991277888036402	CMakeFiles/implot.dir/implot.cpp.obj	700d5b5b22b65b61
+19	1200	7991277888086397	CMakeFiles/implot.dir/implot_items.cpp.obj	3809d048e669e3a1
+1200	1308	7991277899892915	implotd.lib	971e7b0e0435ee48
+1308	1400	7991277900971040	CMakeFiles/install.util	6bf4cbdfca9d4341

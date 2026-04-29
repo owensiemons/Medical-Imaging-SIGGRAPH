@@ -31,7 +31,13 @@ layout(std140, binding = 0) uniform main_uniforms {
     
     float step_size;
     float light_step_size;
-    vec2 pad3_;
+    float light_t;
+    float pad3_;
+};
+
+layout(std140, binding = 1) uniform phong_uniforms {
+    vec4 ka_kd_ks_sp;
+    vec4 t_s_a_a;
 };
 
 void main() {
@@ -72,7 +78,13 @@ layout(std140, binding = 0) uniform main_uniforms {
     
     float step_size;
     float light_step_size;
-    vec2 pad3_;
+    float light_t;
+    float pad3_;
+};
+
+layout(std140, binding = 1) uniform phong_uniforms {
+    vec4 ka_kd_ks_sp;
+    vec4 t_s_a_a;
 };
 
 uniform sampler3D tex0;
@@ -128,20 +140,20 @@ float lookup(vec3 pos) {
 
 vec3 traceScene(vec3 ro, vec3 rd, AABB aabb, uint rng_seed) {
     // absorption coeff
-    float sigma_a = 0.8;
+    float sigma_a = t_s_a_a.z;
 
     // scattering coeff
-    float sigma_s = 0.9;
+    float sigma_s = t_s_a_a.y;
 
     // extinction coeff
     float sigma_t = sigma_a + sigma_s;
 
     // phase function asymmetry (-1, 1)
-    float g = 0.1;
+    float g = t_s_a_a.w;
 
 
     vec3 light_color = vec3(50);
-    vec3 light_pos = vec3(0.0, 2.0, 2.0);
+    vec3 light_pos = vec3(sin(light_t), 0.3, cos(light_t));
 
 
     float tnear, tfar;

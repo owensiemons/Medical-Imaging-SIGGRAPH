@@ -12,6 +12,9 @@
         "opengl3-binding"
       ]
     },
+    {
+      "name": "implot"
+    },
     "stb",
     "tiff"
   ]
