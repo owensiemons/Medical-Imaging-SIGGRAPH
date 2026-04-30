@@ -93,7 +93,7 @@ struct rgb_transfer_elem {
 };
 
 layout(std430, binding = 0) buffer rgb_transfer_ssbo {
-    rgb_transfer_elem transfer_data[2];
+    rgb_transfer_elem transfer_data[];
 };
 
 
@@ -300,8 +300,9 @@ void main() {
 
             mat_color = transfer_func(lookup(pos));
 
-            color = (ambient + diffuse) * mat_color + specular * spec_color;
+            color = diffuse * mat_color + specular * spec_color;
             color *= isLit;
+            color += ambient * mat_color;
 
             break;
         }

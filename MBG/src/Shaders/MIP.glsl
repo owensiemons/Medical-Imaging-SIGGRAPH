@@ -83,8 +83,9 @@ struct rgb_transfer_elem {
 };
 
 layout(std430, binding = 0) buffer rgb_transfer_ssbo {
-    rgb_transfer_elem transfer_data[2];
+    rgb_transfer_elem transfer_data[];
 };
+
 
 uniform sampler3D tex0;
 

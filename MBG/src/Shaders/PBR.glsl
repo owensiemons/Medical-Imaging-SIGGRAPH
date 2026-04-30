@@ -47,7 +47,7 @@ void main() {
 
 
 #shader FRAGMENT
-#version 420 core
+#version 430 core
 
 layout(std140, binding = 0) uniform main_uniforms {
     vec2 screen_size;
@@ -86,6 +86,16 @@ layout(std140, binding = 1) uniform phong_uniforms {
     vec4 ka_kd_ks_sp;
     vec4 t_s_a_a;
 };
+
+struct rgb_transfer_elem {
+	vec3 col;
+	float dens; // 16 bytes
+};
+
+layout(std430, binding = 0) buffer rgb_transfer_ssbo {
+    rgb_transfer_elem transfer_data[];
+};
+
 
 uniform sampler3D tex0;
 
@@ -132,10 +142,49 @@ float phaseHG(vec3 rd, vec3 light_dir, float g) {
     return (1.0 / (4.0 * PI)) * (1.0 - g * g) / (denom * sqrt(denom));
 }
 
-// handles changing space
+vec3 transfer_func(float x) { // assumes x in texture space
+    vec3 lerp_col;
+
+    float min_d = transfer_data[0].dens;
+    vec3 min_col = transfer_data[0].col;
+    float max_d = transfer_data[rgb_transfer_arr_size - 1].dens;
+    vec3 max_col = transfer_data[rgb_transfer_arr_size - 1].col;
+
+    if (x == 0.0) {// Not totally sure why this is needed, but otherwise it breaks if min_d == 0
+        return min_col;
+    }
+
+    if (x < min_d) {
+        lerp_col = min_col;
+    } else if (x > max_d) {
+        lerp_col = max_col;
+    } else {
+        int i = 0;
+        while (x > transfer_data[i].dens) {
+            i++;
+        }
+        vec3 col_1 = transfer_data[i - 1].col;
+        float d_1 = transfer_data[i - 1].dens;
+
+        vec3 col_2 = transfer_data[i].col;
+        float d_2 = transfer_data[i].dens;
+
+        lerp_col = mix(col_1, col_2, (x - d_1) / (d_2 - d_1)); // We're interpolating in linear rgb, for better results we could first translate to a space like OKLAB
+    }
+
+    return lerp_col;
+}
+
+vec3 to_tex_space(vec3 pos) {
+    return (pos - aabb_min) / (aabb_max - aabb_min);
+}
+
 float lookup(vec3 pos) {
-    vec3 tex_space = (pos - aabb_min) / (aabb_max - aabb_min);
-    return texture(tex0, tex_space).x;
+    return texture(tex0, to_tex_space(pos)).x;
+}
+
+vec3 lookup_col(vec3 pos) {
+    return transfer_func(texture(tex0, to_tex_space(pos)).x);
 }
 
 vec3 traceScene(vec3 ro, vec3 rd, AABB aabb, uint rng_seed) {
@@ -177,6 +226,8 @@ vec3 traceScene(vec3 ro, vec3 rd, AABB aabb, uint rng_seed) {
     float transparency = 1.0;
     vec3 result = vec3(0.0);
 
+    vec3 col = vec3(1.0, 0.0, 1.0);
+
     while (ray_len > 0) {
 
         if (sample_pos.z > z_bounds.x || sample_pos.z < z_bounds.y || sample_pos.y > y_bounds.x || sample_pos.y < y_bounds.y || sample_pos.x > x_bounds.x || sample_pos.x < x_bounds.y) {
@@ -186,6 +237,7 @@ vec3 traceScene(vec3 ro, vec3 rd, AABB aabb, uint rng_seed) {
         }
         
         float density = lookup(sample_pos);
+        col = lookup_col(sample_pos);
 
         // attenuate by beer-lambert
         float sample_attenuation = exp(-step_size * density * sigma_t);
@@ -194,7 +246,6 @@ vec3 traceScene(vec3 ro, vec3 rd, AABB aabb, uint rng_seed) {
 
         // In-Scattering. Find the distance traveled by light through 
         // the volume to our sample point. Then apply Beer's law.
-        // NOTE: doesnt not currently work as intented with varied density
         vec3 light_dir = normalize(light_pos - sample_pos);
         float ltnear, ltfar;
         
@@ -226,7 +277,7 @@ vec3 traceScene(vec3 ro, vec3 rd, AABB aabb, uint rng_seed) {
             float phase = phaseHG(rd, light_dir, g);
             
             // attenuate in-scattering contrib. by the transmission of all samples accumulated so far
-            result += transparency * light_color * light_attenuation * density * sigma_s * step_size * phase;
+            result += transparency * light_color * col * light_attenuation * density * sigma_s * step_size * phase;
             rng_seed++;
         }
 

@@ -68,8 +68,6 @@ target_include_directories(MBG PRIVATE ${Stb_INCLUDE_DIR})
 find_package(TIFF REQUIRED)
 target_link_libraries(MBG PRIVATE TIFF::TIFF)
 
-
-
 add_custom_target(copy_folders ALL
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_LIST_DIR}/copy_folders.cmake
 )

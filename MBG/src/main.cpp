@@ -9,6 +9,8 @@ int initHeight = 1200;
 
 int main() {
 	// ----------------- Window -----------------------------
+	std::vector<void*> callback_ptrs;
+
 	Window window(initWidth, initHeight, "Renderer");
 	GLFWwindow* glfw_wind = window.getWindow();
 
@@ -16,8 +18,8 @@ int main() {
 	glfwSetCursorPosCallback(glfw_wind, mouse_callback);
 	glfwSetScrollCallback(glfw_wind, scroll_callback);
 
-	std::vector<void*> callback_ptrs;
 	glfwSetWindowUserPointer(glfw_wind, &callback_ptrs);
+	callback_ptrs.push_back(static_cast<void*>(&window));
 	// ^^ We need to be able to pass the camera, renderpass, etc. objects to the callback functions, we need to use WindowUserPointer for that,
 	// my solution is to use a vector of void* and static cast them into the correct objects later
 
@@ -83,7 +85,7 @@ int main() {
 		(void*)rgb_transfer_data.data(),
 		32 * sizeof(rgb_transfer_elem),// max 32 size
 		BUFFER_USAGE::DYNAMIC_DRAW,
-		3
+		0
 	);
 
 	ShaderStorageBuffer rgb_ssbo(rgb_ssbo_params);
@@ -98,7 +100,7 @@ int main() {
         a_transfer_data.data(),
 		32 * sizeof(a_transfer_elem),// max 32 size
 		BUFFER_USAGE::DYNAMIC_DRAW,
-		4
+		1
 	);
 
 	ShaderStorageBuffer a_ssbo(a_ssbo_params);
@@ -330,19 +332,17 @@ int main() {
 			ImGui::Separator();
 		}
 
-		if (shader_idx % shader_files.size() != 3) {
-			rgb_grad.widget("Color Gradient", grad_settings);
-			ImGui::Separator();
+		rgb_grad.widget("Color Gradient", grad_settings);
+		ImGui::Separator();
 
-			rgb_transfer_data.clear();
-			for (auto it = rgb_grad.gradient().get_marks().begin(); it != rgb_grad.gradient().get_marks().end(); ++it) {// Yes, we remap every frame, its a pain to do otherwise prob
-				ImGG::ColorRGBA col = (*it).color;
-				ImGG::RelativePosition pos = (*it).position;
-				rgb_transfer_data.push_back({ vec3(col.x, col.y, col.z), pos.get() });
-			}
-
-			rgb_ssbo.remapData(rgb_transfer_data.size() * sizeof(rgb_transfer_elem), rgb_transfer_data.data(), 0);
+		rgb_transfer_data.clear();
+		for (auto it = rgb_grad.gradient().get_marks().begin(); it != rgb_grad.gradient().get_marks().end(); ++it) {// Yes, we remap every frame, its a pain to do otherwise prob
+			ImGG::ColorRGBA col = (*it).color;
+			ImGG::RelativePosition pos = (*it).position;
+			rgb_transfer_data.push_back({ vec3(col.x, col.y, col.z), pos.get() });
 		}
+
+		rgb_ssbo.remapData(rgb_transfer_data.size() * sizeof(rgb_transfer_elem), rgb_transfer_data.data(), 0);
 
 
 
@@ -387,6 +387,11 @@ int main() {
 
 		if (glfwWindowShouldClose(glfw_wind)) {
 			break;
+		}
+
+		if (glfwGetWindowAttrib(glfw_wind, GLFW_ICONIFIED)) {
+			glfwWaitEvents();
+			continue;
 		}
 
 		int fbWidth, fbHeight;
@@ -446,9 +451,6 @@ int main() {
 	ImGui_ImplGlfw_Shutdown();
 	ImPlot::DestroyContext();
 	ImGui::DestroyContext();
-
-	glfwDestroyWindow(glfw_wind);
-	glfwTerminate();
 
 	return 0;
 }

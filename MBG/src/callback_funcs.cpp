@@ -33,7 +33,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
 	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
 		std::vector<void*>* callback_ptrs = static_cast<std::vector<void*>*>(glfwGetWindowUserPointer(window));
-		RenderPass* render_pass_main = static_cast<RenderPass*>((*callback_ptrs)[1]);
+		RenderPass* render_pass_main = static_cast<RenderPass*>((*callback_ptrs)[2]);
 
 		shader_idx++;
 		render_pass_main->changeShader(shader_files[shader_idx % shader_files.size()]);
@@ -45,7 +45,7 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
 
 	if (islmbHeld) {
 		std::vector<void*>* callback_ptrs = static_cast<std::vector<void*>*>(glfwGetWindowUserPointer(window));
-		Camera* camera = static_cast<Camera*>((*callback_ptrs)[0]);
+		Camera* camera = static_cast<Camera*>((*callback_ptrs)[1]);
 
 		float xpos = static_cast<float>(xposIn);
 		float ypos = static_cast<float>(yposIn);
@@ -81,7 +81,7 @@ void scroll_callback(GLFWwindow* window, double xposIn, double yposIn) {
 	if (ImGui::GetIO().WantCaptureMouse) return;
 
 	std::vector<void*>* callback_ptrs = static_cast<std::vector<void*>*>(glfwGetWindowUserPointer(window));
-	Camera* camera = static_cast<Camera*>((*callback_ptrs)[0]);
+	Camera* camera = static_cast<Camera*>((*callback_ptrs)[1]);
 	//float currFOV = camera->getFOV();
 
 	float ypos = static_cast<float>(yposIn);

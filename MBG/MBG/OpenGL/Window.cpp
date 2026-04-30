@@ -7,7 +7,7 @@ void APIENTRY Window::glDebugOutput(GLenum source,
 	unsigned int id,
 	GLenum severity,
 	GLsizei length,
-	const char* message,
+	const GLchar* message,
 	const void* userParam)
 {
 	// ignore non-significant error/warning codes
@@ -125,9 +125,12 @@ void Window::startOpenGLDebug()
 
 void Window::framebuffer_size_callback_static(GLFWwindow* window, int width, int height)
 {
-	// Call an instance method or perform class-specific actions
-	Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));
-	if (instance) {
+	if (width == 0 || height == 0) {
+		return;
+	}
+	std::vector<void*>* ptrs = static_cast<std::vector<void*>*>(glfwGetWindowUserPointer(window));
+	if (ptrs) {
+		Window* instance = static_cast<Window*>((*ptrs)[0]);
 		instance->framebuffer_size_callback(window, width, height);
 	}
 }
@@ -162,7 +165,7 @@ Window::Window(int width, int height, std::string window_name = "Unnamed") : wid
 
 	glfwMakeContextCurrent(window);
 
-	glfwSetWindowUserPointer(window, this);
+	//glfwSetWindowUserPointer(window, this);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback_static);
 
 	// glad: load all OpenGL function pointers
@@ -188,7 +191,7 @@ bool Window::isClosed() const
 
 Window::~Window()
 {
-	// TODO: delete window??
+	glfwDestroyWindow(window);
 	glfwTerminate();
 }
 
