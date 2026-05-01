@@ -1,5 +1,0 @@
-C:/Users/rowan/source/repos/Medical-Imaging-SIGGRAPH/vcpkg_installed/vcpkg/pkgs/implot_x64-windows/lib/implot.lib
-C:/Users/rowan/source/repos/Medical-Imaging-SIGGRAPH/vcpkg_installed/vcpkg/pkgs/implot_x64-windows/include/implot.h
-C:/Users/rowan/source/repos/Medical-Imaging-SIGGRAPH/vcpkg_installed/vcpkg/pkgs/implot_x64-windows/include/implot_internal.h
-C:/Users/rowan/source/repos/Medical-Imaging-SIGGRAPH/vcpkg_installed/vcpkg/pkgs/implot_x64-windows/share/implot/implot-config.cmake
-C:/Users/rowan/source/repos/Medical-Imaging-SIGGRAPH/vcpkg_installed/vcpkg/pkgs/implot_x64-windows/share/implot/implot-config-release.cmake
