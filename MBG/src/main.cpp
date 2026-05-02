@@ -1,4 +1,5 @@
 #include "common.hpp"
+
 using namespace glm;
 using namespace MBG;
 
@@ -329,6 +330,8 @@ int main() {
 			if (ImGui::Button("Reset")) {
 				a_transfer_data.clear();
 			}
+			ImGui::SameLine();
+			ImGui::Text("ctrl-click to add nodes");
 			ImGui::Separator();
 		}
 
