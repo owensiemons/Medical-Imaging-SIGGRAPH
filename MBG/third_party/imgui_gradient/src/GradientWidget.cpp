@@ -420,6 +420,8 @@ auto GradientWidget::widget(
             _gradient = {};
             modified  = true;
         }
+        ImGui::SameLine();
+        ImGui::Text("drag marks down to remove");
     }
     const auto is_there_a_tooltip{!(settings.flags & Flag::NoTooltip)};
     const auto is_there_remove_button{!(settings.flags & Flag::NoRemoveButton)};
