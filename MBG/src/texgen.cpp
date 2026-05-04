@@ -63,9 +63,9 @@ void Load3DTextureBinary(const std::string& folder, unsigned char*& buffer, uint
     std::streampos size;
     char* memblock;
 
-    width = 512;
-    height = 208;
-    depth = 512;
+    width = 268;
+    height = 280;
+    depth = 173;
 
     std::ifstream file(folder, std::ios::in | std::ios::binary | std::ios::ate);
     if (file.is_open()) {

@@ -201,7 +201,7 @@ vec3 traceScene(vec3 ro, vec3 rd, AABB aabb, uint rng_seed) {
     float g = t_s_a_a.w;
 
 
-    vec3 light_color = vec3(50);
+    vec3 light_color = vec3(100);
     vec3 light_pos = vec3(sin(light_t), 0.3, cos(light_t));
 
 

@@ -420,8 +420,6 @@ auto GradientWidget::widget(
             _gradient = {};
             modified  = true;
         }
-        ImGui::SameLine();
-        ImGui::Text("drag marks down to remove");
     }
     const auto is_there_a_tooltip{!(settings.flags & Flag::NoTooltip)};
     const auto is_there_remove_button{!(settings.flags & Flag::NoRemoveButton)};
@@ -448,6 +446,7 @@ auto GradientWidget::widget(
             _selected_mark = new_selected_mark;
             modified       = true;
         }
+
     }
 
     const auto is_there_add_button{!(settings.flags & Flag::NoAddButton)};
@@ -481,6 +480,7 @@ auto GradientWidget::widget(
             ImGui::SameLine();
             modified |= color_button(*selected_mark, is_there_a_tooltip, settings.color_edit_flags);
             force_dont_deselect_mark = ImGui::IsItemActive(); // The color popup can go outside the border, but we don't want to deselect the mark when we click on it
+
         }
 
         if (!(settings.flags & Flag::NoPositionSlider))
@@ -497,6 +497,9 @@ auto GradientWidget::widget(
                 modified = true;
             }
         }
+
+        ImGui::SameLine();
+        ImGui::Text("drag marks down to remove");
     }
 
 

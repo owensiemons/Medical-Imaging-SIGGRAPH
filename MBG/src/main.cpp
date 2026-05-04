@@ -39,8 +39,8 @@ int main() {
 	// ----------------- Texture Stuff -----------------------------
 	uint32_t width, height, depth;
 	unsigned char* volume_data = nullptr;//volume_vector.data();
-	std::cout << std::filesystem::absolute("Data/ct_scan.raw") << std::endl;
-	Load3DTextureBinary("Data/ct_scan.raw", volume_data, width, height, depth);
+	std::cout << std::filesystem::absolute("Data/brain.raw") << std::endl;
+	Load3DTextureBinary("Data/brain.raw", volume_data, width, height, depth);
 
 	Texture3DBuffer volume_texture({
 		.size = uvec3(width, height, depth),
@@ -55,7 +55,7 @@ int main() {
 
 	// scale the bounding box to match the dimensions of the data, no warping
 
-	float vx = 0.5f, vy = 1.0f, vz = 0.5f; // This is the spacing between voxels from the .nii, ex print(scan.header.get_zooms())
+	float vx = 1.0f, vy = 1.0f, vz = 1.0f; // This is the spacing between voxels from the .nii, ex print(scan.header.get_zooms())
 	float px = width * vx;
 	float py = height * vy;
 	float pz = depth * vz;
@@ -350,8 +350,8 @@ int main() {
 
 
 		if (shader_idx % shader_files.size() == 3) {
-			ImGui::SliderFloat("Scattering", &scatter, 0.0f, 1.0f);
-			ImGui::SliderFloat("Absorption", &absorption, 0.0f, 1.0f);
+			ImGui::SliderFloat("Scattering", &scatter, 0.0f, 10.0f);
+			ImGui::SliderFloat("Absorption", &absorption, 0.0f, 10.0f);
 			ImGui::SliderFloat("Asymmetry", &asymmetry, -1.0f, 1.0f);
 				ImGui::Separator();
 		}
